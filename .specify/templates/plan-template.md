@@ -40,7 +40,16 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Verify each item before proceeding:
+
+- [ ] **I. Code Quality** — TypeScript strict mode enabled; no unaddressed `any` casts planned.
+- [ ] **II. Test-First** — Test plan written; tests will be authored before implementation.
+- [ ] **III. UX Consistency** — 720×1280 px layout verified; icon slots use 32×32 px bounding boxes.
+- [ ] **IV. Performance** — Estimated bundle delta documented; spin logic benchmarked or bounded.
+- [ ] **V. Build Pipeline** — CI gates (typecheck → lint → unit → integration → build → bundle size)
+      configured or confirmed in `.github/workflows/`.
+
+Any unchecked item MUST be resolved or explicitly justified in the Complexity Tracking table below.
 
 ## Project Structure
 

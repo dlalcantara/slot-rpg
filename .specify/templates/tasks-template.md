@@ -157,6 +157,12 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
+- [ ] TXXX **[GATE 1] Typecheck** — `tsc --noEmit` exits 0 (blocks next gates)
+- [ ] TXXX **[GATE 2] Lint** — ESLint exits 0 with zero errors
+- [ ] TXXX **[GATE 3] Unit Tests** — all unit tests pass
+- [ ] TXXX **[GATE 4] Integration Tests** — all integration tests pass
+- [ ] TXXX **[GATE 5] Build** — production bundle compiles cleanly
+- [ ] TXXX **[GATE 6] Bundle Size** — gzipped JS bundle ≤ 250 KB; report delta in PR
 
 ---
 
