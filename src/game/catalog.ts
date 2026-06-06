@@ -1,0 +1,68 @@
+import type { IconDefinition } from './types'
+
+export const ICON_CATALOG: Record<string, IconDefinition> = {
+  blank: {
+    definitionId: 'blank',
+    family: 'blank',
+    valuePerColumn: 0,
+    label: '[ ]',
+    effect: { type: 'none' },
+    cost: null,
+  },
+  apple: {
+    definitionId: 'apple',
+    family: 'apple',
+    valuePerColumn: 1,
+    label: 'Apple',
+    effect: { type: 'add_currency', currency: 'food', valuePerColumn: 1 },
+    cost: { currency: 'copper', amount: 1 },
+  },
+  'triple-apple': {
+    definitionId: 'triple-apple',
+    family: 'apple',
+    valuePerColumn: 3,
+    label: '3× Apple',
+    effect: { type: 'add_currency', currency: 'food', valuePerColumn: 3 },
+    cost: { currency: 'silver', amount: 1 },
+  },
+  'dozen-apple': {
+    definitionId: 'dozen-apple',
+    family: 'apple',
+    valuePerColumn: 12,
+    label: '12× Apple',
+    effect: { type: 'add_currency', currency: 'food', valuePerColumn: 12 },
+    cost: { currency: 'gold', amount: 1 },
+  },
+  copper: {
+    definitionId: 'copper',
+    family: 'copper',
+    valuePerColumn: 1,
+    label: 'Copper',
+    effect: { type: 'add_currency', currency: 'copper', valuePerColumn: 1 },
+    cost: { currency: 'copper', amount: 1 },
+  },
+  silver: {
+    definitionId: 'silver',
+    family: 'silver',
+    valuePerColumn: 1,
+    label: 'Silver',
+    effect: { type: 'add_currency', currency: 'silver', valuePerColumn: 1 },
+    cost: { currency: 'silver', amount: 1 },
+  },
+  gold: {
+    definitionId: 'gold',
+    family: 'gold',
+    valuePerColumn: 1,
+    label: 'Gold',
+    effect: { type: 'add_currency', currency: 'gold', valuePerColumn: 1 },
+    cost: { currency: 'gold', amount: 1 },
+  },
+  crown: {
+    definitionId: 'crown',
+    family: 'crown',
+    valuePerColumn: 1,
+    label: 'Crown',
+    effect: { type: 'add_currency', currency: 'crowns', valuePerColumn: 1 },
+    cost: { currency: 'gold', amount: 10 },
+  },
+}

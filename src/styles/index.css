@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --spin-duration: 5s;
+  --col-stagger: 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --spin-duration: 0s;
+    --col-stagger: 0s;
+  }
+}
+
+body {
+  @apply bg-gray-900 text-gray-100 min-h-screen;
+}
+
+.icon-cell {
+  @apply w-8 h-8 flex items-center justify-center font-bold border border-gray-600 rounded bg-gray-800 select-none overflow-hidden;
+  font-size: 7px;
+  line-height: 1;
+}
+
+.currency-value {
+  @apply font-mono font-bold tabular-nums;
+}
+
+@keyframes reel-spin {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-100%); }
+}
+
+.reel-spinning {
+  animation: reel-spin var(--spin-duration) cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
