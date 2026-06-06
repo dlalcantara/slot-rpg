@@ -56,7 +56,7 @@ All UI interactions MUST behave identically at the target mobile resolution (720
 and on desktop viewports ≥ 1280 px wide.
 
 - The 3 × 5 slot grid MUST be visually intact at both breakpoints with no overflow or clipping.
-- Icon placeholder slots MUST use fixed 32 × 32 px bounding boxes so future PNG swaps
+- Icon placeholder slots MUST use fixed 128 × 128 px bounding boxes so future PNG swaps
   require zero layout changes.
 - Spin animation (if implemented) MUST complete or be skippable within 5 seconds; the UI
   MUST NOT accept new input during an active spin.

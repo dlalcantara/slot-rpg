@@ -99,6 +99,7 @@ New players start with a reel of 2 blanks, 1 apple, and 1 copper icon. All icons
 - **FR-011**: When all columns have stopped, a modal MUST appear showing the spin result and currencies earned
 - **FR-012**: All icons throughout the game MUST be displayed at 128×128 pixels
 - **FR-013**: A new game MUST begin with a reel of exactly 2 blank icons, 1 apple icon, and 1 copper icon
+- **FR-014**: The Spin button MUST be disabled and non-interactive while a spin is in progress
 
 ### Key Entities
 
