@@ -39,7 +39,7 @@ describe('SPIN action', () => {
 
   it('decrements food by 1', () => {
     const state = stateWithCurrencies({ food: 10 })
-    const next = gameReducer(state, { type: 'SPIN' })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
     // food starts 10, payout adds 1, net = 10
     expect(next.currencies.food).toBe(10)
   })
@@ -50,7 +50,7 @@ describe('SPIN action', () => {
       payouts: [{ family: 'copper', amount: 5, currency: 'copper' }],
     })
     const state = stateWithCurrencies({ food: 10, copper: 0 })
-    const next = gameReducer(state, { type: 'SPIN' })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
     expect(next.currencies.copper).toBe(5)
   })
 
@@ -60,13 +60,13 @@ describe('SPIN action', () => {
       payouts: [],
     })
     const state = stateWithCurrencies({ food: 1 })
-    const next = gameReducer(state, { type: 'SPIN' })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
     expect(next.phase).toBe('gameover')
   })
 
   it('sets lastSpinResult after spin', () => {
     const state = stateWithCurrencies({ food: 10 })
-    const next = gameReducer(state, { type: 'SPIN' })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
     expect(next.lastSpinResult).not.toBeNull()
   })
 
@@ -76,8 +76,144 @@ describe('SPIN action', () => {
       payouts: [],
     })
     const state = stateWithCurrencies({ food: 10 })
-    const next = gameReducer(state, { type: 'SPIN' })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
     expect(next.phase).toBe('market')
+  })
+
+  it('blocks spin when food < multiplier', () => {
+    const state = stateWithCurrencies({ food: 9 })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 10 })
+    expect(next.currencies.food).toBe(9) // unchanged
+    expect(next.spinCount).toBe(state.spinCount)
+  })
+
+  it('allows spin when food equals multiplier exactly', () => {
+    mockComputeSpin.mockReturnValueOnce({
+      columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
+      payouts: [],
+    })
+    const state = stateWithCurrencies({ food: 10 })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 10 })
+    expect(next.currencies.food).toBe(0)
+    expect(next.spinCount).toBe(1)
+  })
+})
+
+describe('SPIN multiplier scaling', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('multiplier:10 deducts 10 food and scales payouts ×10', () => {
+    mockComputeSpin.mockReturnValueOnce({
+      columns: Array(5).fill([{ id: 'c1', definitionId: 'copper' }]),
+      payouts: [{ family: 'copper', amount: 3, currency: 'copper' }],
+    })
+    const state = stateWithCurrencies({ food: 20, copper: 0 })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 10 })
+    expect(next.currencies.food).toBe(10) // 20 - 10
+    expect(next.currencies.copper).toBe(30) // 3 * 10
+  })
+
+  it('multiplier:100 deducts 100 food and scales payouts ×100', () => {
+    mockComputeSpin.mockReturnValueOnce({
+      columns: Array(5).fill([{ id: 'c1', definitionId: 'copper' }]),
+      payouts: [{ family: 'copper', amount: 2, currency: 'copper' }],
+    })
+    // Disable autoConvert so copper stays as copper (200 < conversion threshold with autoConvert off)
+    const state: GameState = {
+      ...stateWithCurrencies({ food: 100, copper: 0 }),
+      settings: { ...makeInitialState().settings, autoConvert: false },
+    }
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 100 })
+    expect(next.currencies.food).toBe(0)
+    expect(next.currencies.copper).toBe(200) // 2 * 100
+  })
+
+  it('lastSpinResult payouts are scaled', () => {
+    mockComputeSpin.mockReturnValueOnce({
+      columns: Array(5).fill([{ id: 'c1', definitionId: 'food' }]),
+      payouts: [{ family: 'apple', amount: 5, currency: 'food' }],
+    })
+    const state = stateWithCurrencies({ food: 50 })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 10 })
+    expect(next.lastSpinResult!.payouts[0].amount).toBe(50) // 5 * 10
+  })
+})
+
+describe('game log', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('SPIN appends a SpinLogEntry to gameLog', () => {
+    const state = stateWithCurrencies({ food: 50 })
+    expect(state.gameLog).toHaveLength(0)
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+    expect(next.gameLog).toHaveLength(1)
+    expect(next.gameLog[0].multiplier).toBe(1)
+    expect(next.gameLog[0].spinNumber).toBe(1)
+  })
+
+  it('gameLog caps at 10 entries after 11 spins', () => {
+    mockComputeSpin.mockReturnValue({
+      columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
+      payouts: [],
+    })
+    let s = stateWithCurrencies({ food: 200 })
+    for (let i = 0; i < 11; i++) {
+      s = gameReducer(s, { type: 'SPIN', multiplier: 1 })
+    }
+    expect(s.gameLog).toHaveLength(10)
+  })
+
+  it('most recent spin is first in gameLog', () => {
+    mockComputeSpin.mockReturnValue({
+      columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
+      payouts: [],
+    })
+    let s = stateWithCurrencies({ food: 50 })
+    s = gameReducer(s, { type: 'SPIN', multiplier: 1 })
+    s = gameReducer(s, { type: 'SPIN', multiplier: 1 })
+    expect(s.gameLog[0].spinNumber).toBe(2)
+    expect(s.gameLog[1].spinNumber).toBe(1)
+  })
+})
+
+describe('UPDATE_SETTINGS action', () => {
+  it('merges patch into settings', () => {
+    const state = makeInitialState()
+    expect(state.settings.autoConvert).toBe(true)
+    const next = gameReducer(state, { type: 'UPDATE_SETTINGS', patch: { autoConvert: false } })
+    expect(next.settings.autoConvert).toBe(false)
+    expect(next.settings.animate).toBe(true) // unchanged
+  })
+})
+
+describe('autoConvert toggle', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('does NOT convert when autoConvert is false', () => {
+    mockComputeSpin.mockReturnValueOnce({
+      columns: Array(5).fill([{ id: 'c1', definitionId: 'copper' }]),
+      payouts: [{ family: 'copper', amount: 1, currency: 'copper' }],
+    })
+    const state: GameState = {
+      ...stateWithCurrencies({ food: 10, copper: 99 }),
+      settings: { ...makeInitialState().settings, autoConvert: false },
+    }
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+    // Should NOT convert: copper stays at 100
+    expect(next.currencies.copper).toBe(100)
+    expect(next.currencies.silver).toBe(0)
+  })
+
+  it('converts when autoConvert is true', () => {
+    mockComputeSpin.mockReturnValueOnce({
+      columns: Array(5).fill([{ id: 'c1', definitionId: 'copper' }]),
+      payouts: [{ family: 'copper', amount: 1, currency: 'copper' }],
+    })
+    const state = stateWithCurrencies({ food: 10, copper: 99 })
+    expect(state.settings.autoConvert).toBe(true)
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+    expect(next.currencies.copper).toBe(0)
+    expect(next.currencies.silver).toBe(1)
   })
 })
 
@@ -122,7 +258,7 @@ describe('WIN condition', () => {
       payouts: [{ family: 'crown', amount: 100, currency: 'crowns' }],
     })
     const state = stateWithCurrencies({ food: 10, crowns: 0 })
-    const next = gameReducer(state, { type: 'SPIN' })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
     expect(next.phase).toBe('win')
   })
 
@@ -147,10 +283,11 @@ describe('HARD_RESET action', () => {
     expect(next.currencies.copper).toBe(0)
     expect(next.reel.icons.length).toBe(4)
     expect(next.lastSpinResult).toBeNull()
+    expect(next.gameLog).toHaveLength(0)
   })
 })
 
-describe('Auto-conversion (US5)', () => {
+describe('Auto-conversion (existing)', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('converts 99 copper + 1 copper earned to 0 copper + 1 silver', () => {
@@ -159,7 +296,7 @@ describe('Auto-conversion (US5)', () => {
       payouts: [{ family: 'copper', amount: 1, currency: 'copper' }],
     })
     const state = stateWithCurrencies({ food: 10, copper: 99 })
-    const next = gameReducer(state, { type: 'SPIN' })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
     expect(next.currencies.copper).toBe(0)
     expect(next.currencies.silver).toBe(1)
   })
@@ -170,7 +307,7 @@ describe('Auto-conversion (US5)', () => {
       payouts: [{ family: 'silver', amount: 1, currency: 'silver' }],
     })
     const state = stateWithCurrencies({ food: 10, silver: 99 })
-    const next = gameReducer(state, { type: 'SPIN' })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
     expect(next.currencies.silver).toBe(0)
     expect(next.currencies.gold).toBe(1)
   })
@@ -181,7 +318,7 @@ describe('Auto-conversion (US5)', () => {
       payouts: [{ family: 'copper', amount: 2, currency: 'copper' }],
     })
     const state = stateWithCurrencies({ food: 10, copper: 99 })
-    const next = gameReducer(state, { type: 'SPIN' })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
     expect(next.currencies.copper).toBe(1)
     expect(next.currencies.silver).toBe(1)
   })

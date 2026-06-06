@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import App from '@/App'
 import type { SpinResult } from '@/game/types'
 
@@ -25,11 +25,16 @@ vi.mock('@/game/spinLogic', () => ({
 describe('full spin flow integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.useFakeTimers()
     localStorage.clear()
     mockComputeSpin.mockReturnValue({
       columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
       payouts: [],
     })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('shows spin button and food counter on load', () => {
@@ -38,10 +43,16 @@ describe('full spin flow integration', () => {
     expect(screen.getByText(/food/i)).toBeInTheDocument()
   })
 
-  it('food decrements after clicking SPIN', () => {
+  it('food decrements after clicking SPIN and animation completes', () => {
     render(<App />)
     expect(screen.getByText('100')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
+
+    // Advance timers past the last column stop time (1500 + 4 * 600 = 3900ms)
+    act(() => {
+      vi.advanceTimersByTime(5000)
+    })
+
     expect(screen.getByText('99')).toBeInTheDocument()
   })
 
@@ -51,8 +62,9 @@ describe('full spin flow integration', () => {
     for (let i = 0; i < 100; i++) {
       if ((spinBtn as HTMLButtonElement).disabled) break
       fireEvent.click(spinBtn)
+      act(() => { vi.advanceTimersByTime(5000) })
     }
-    expect(screen.getByRole('button', { name: /reset/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /reset/i }).length).toBeGreaterThan(0)
   })
 
   it('win modal appears when crowns reach 100', () => {

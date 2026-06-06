@@ -1,4 +1,4 @@
-import type { GameState, Currencies } from './types'
+import type { GameState, Currencies, SpinMultiplier, PlayerSettings, SpinLogEntry } from './types'
 import { ICON_CATALOG } from './catalog'
 import { CURRENCY_REGISTRY, CURRENCY_ORDER } from './currencyRegistry'
 import { computeSpin } from './spinLogic'
@@ -6,11 +6,12 @@ import { saveState, clearState } from './persistence'
 import { makeInitialState } from './initialState'
 
 export type GameAction =
-  | { type: 'SPIN' }
+  | { type: 'SPIN'; multiplier: SpinMultiplier }
   | { type: 'BUY_ICON'; iconDefinitionId: string }
   | { type: 'HARD_RESET' }
   | { type: 'CONTINUE_AFTER_WIN' }
   | { type: 'RESTORE_STATE'; savedState: GameState }
+  | { type: 'UPDATE_SETTINGS'; patch: Partial<PlayerSettings> }
 
 function applyAutoConversions(currencies: Currencies): Currencies {
   const result: Currencies = { ...currencies }
@@ -81,18 +82,39 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'SPIN': {
       if (state.phase !== 'market') return state
+      const { multiplier } = action
+      if ((state.currencies.food ?? 0) < multiplier) return state
 
       const spinResult = computeSpin(state.reel)
-      let currencies: Currencies = { ...state.currencies, food: state.currencies.food - 1 }
+      let currencies: Currencies = { ...state.currencies, food: state.currencies.food - multiplier }
 
       for (const payout of spinResult.payouts) {
-        currencies[payout.currency] = (currencies[payout.currency] ?? 0) + payout.amount
+        currencies[payout.currency] = (currencies[payout.currency] ?? 0) + payout.amount * multiplier
       }
 
-      currencies = applyAutoConversions(currencies)
-      const phase = checkPhase(currencies)
+      if (state.settings.autoConvert) {
+        currencies = applyAutoConversions(currencies)
+      }
 
-      const newState: GameState = { ...state, currencies, phase, lastSpinResult: spinResult, spinCount: state.spinCount + 1 }
+      const phase = checkPhase(currencies)
+      const scaledPayouts = spinResult.payouts.map(p => ({ ...p, amount: p.amount * multiplier }))
+      const logEntry: SpinLogEntry = {
+        spinNumber: state.spinCount + 1,
+        multiplier,
+        payouts: scaledPayouts,
+        timestamp: Date.now(),
+      }
+      const gameLog = [logEntry, ...state.gameLog].slice(0, 10)
+      const scaledResult = { ...spinResult, payouts: scaledPayouts }
+
+      const newState: GameState = {
+        ...state,
+        currencies,
+        phase,
+        lastSpinResult: scaledResult,
+        spinCount: state.spinCount + 1,
+        gameLog,
+      }
       saveState(newState)
       return newState
     }
@@ -116,6 +138,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'RESTORE_STATE':
       return action.savedState
+
+    case 'UPDATE_SETTINGS': {
+      const newState: GameState = { ...state, settings: { ...state.settings, ...action.patch } }
+      saveState(newState)
+      return newState
+    }
 
     default:
       return state

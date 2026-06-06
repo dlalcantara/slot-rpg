@@ -20,10 +20,21 @@ function canAfford(def: IconDefinition, currencies: Currencies): boolean {
   return (currencies[sourceKey] ?? 0) >= unitsNeeded
 }
 
+function getAltPrice(costCurrency: string, amount: number): string | null {
+  if (costCurrency === 'gold') {
+    return `${amount * 100} Silver / ${amount * 10000} Copper`
+  }
+  if (costCurrency === 'silver') {
+    return `${amount * 100} Copper`
+  }
+  return null
+}
+
 export function MarketItem({ def, currencies, onBuy }: Props) {
   if (!def.cost) return null
   const affordable = canAfford(def, currencies)
   const costDef = CURRENCY_REGISTRY[def.cost.currency]
+  const altPrice = getAltPrice(def.cost.currency, def.cost.amount)
 
   return (
     <div className="flex items-center justify-between p-2 bg-gray-700 rounded-lg">
@@ -34,6 +45,9 @@ export function MarketItem({ def, currencies, onBuy }: Props) {
           <p className="text-xs text-gray-400">
             {def.cost.amount} {costDef?.label ?? def.cost.currency}
           </p>
+          {altPrice && (
+            <p className="text-xs text-gray-500">{altPrice}</p>
+          )}
         </div>
       </div>
       <button

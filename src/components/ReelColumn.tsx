@@ -6,11 +6,12 @@ interface Props {
   icons: Icon[]
   reelIcons: Icon[]
   spinning: boolean
+  animate: boolean
   colIndex: number
   onDone?: () => void
 }
 
-export function ReelColumn({ icons, reelIcons, spinning, colIndex, onDone }: Props) {
+export function ReelColumn({ icons, reelIcons, spinning, animate, colIndex, onDone }: Props) {
   const [animating, setAnimating] = useState(false)
   const [displayIcons, setDisplayIcons] = useState<Icon[]>(icons)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -18,7 +19,6 @@ export function ReelColumn({ icons, reelIcons, spinning, colIndex, onDone }: Pro
 
   useEffect(() => {
     if (!spinning) {
-      // Stopped: clear timers, show resolved icons
       if (intervalRef.current) clearInterval(intervalRef.current)
       if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
       intervalRef.current = null
@@ -28,9 +28,16 @@ export function ReelColumn({ icons, reelIcons, spinning, colIndex, onDone }: Pro
       return
     }
 
+    // When animate is off, immediately show result and signal done
+    if (!animate) {
+      setAnimating(false)
+      setDisplayIcons(icons)
+      onDone?.()
+      return
+    }
+
     const pool = reelIcons.length > 0 ? reelIcons : icons
 
-    // All columns start immediately — no stagger delay on start
     setAnimating(true)
     intervalRef.current = setInterval(() => {
       setDisplayIcons(
@@ -38,7 +45,6 @@ export function ReelColumn({ icons, reelIcons, spinning, colIndex, onDone }: Pro
       )
     }, 200)
 
-    // Columns stop individually with staggered stop times
     const stopDelay = 1500 + colIndex * 600
     stopTimerRef.current = setTimeout(() => {
       if (intervalRef.current) clearInterval(intervalRef.current)

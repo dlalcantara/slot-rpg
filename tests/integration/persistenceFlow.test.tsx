@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import App from '@/App'
 import { makeInitialState } from '@/game/initialState'
 import type { GameState } from '@/game/types'
@@ -25,8 +25,13 @@ vi.mock('@/game/spinLogic', () => ({
 describe('persistence flow integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.useFakeTimers()
     localStorage.clear()
     mockLoadState.mockReturnValue(null)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('restores state on remount with seeded state from loadState', () => {
@@ -43,6 +48,12 @@ describe('persistence flow integration', () => {
   it('hard reset returns game to initial state', () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
+
+    // Advance timers so all reel columns finish animating → onSpinDone fires → currency bar updates
+    act(() => {
+      vi.advanceTimersByTime(5000)
+    })
+
     expect(screen.getByText('99')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /hard reset/i }))

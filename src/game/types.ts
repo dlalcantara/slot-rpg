@@ -66,6 +66,27 @@ export interface SpinResult {
 
 export type GamePhase = 'market' | 'spinning' | 'gameover' | 'win'
 
+export type SpinMultiplier = 1 | 10 | 100
+
+export interface PlayerSettings {
+  autoConvert: boolean
+  animate: boolean
+  spinMultiplier: SpinMultiplier
+}
+
+export const DEFAULT_SETTINGS: PlayerSettings = {
+  autoConvert: true,
+  animate: true,
+  spinMultiplier: 1,
+}
+
+export interface SpinLogEntry {
+  spinNumber: number
+  multiplier: SpinMultiplier
+  payouts: Payout[]
+  timestamp: number
+}
+
 export interface GameState {
   version: number
   reel: Reel
@@ -73,4 +94,6 @@ export interface GameState {
   phase: GamePhase
   lastSpinResult: SpinResult | null
   spinCount: number
+  settings: PlayerSettings
+  gameLog: SpinLogEntry[]
 }

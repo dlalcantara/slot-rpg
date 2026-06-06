@@ -1,4 +1,5 @@
 import type { GameState } from './types'
+import { DEFAULT_SETTINGS } from './types'
 import { CURRENCY_REGISTRY } from './currencyRegistry'
 
 let _counter = 0
@@ -14,7 +15,7 @@ function buildInitialCurrencies(): Record<string, number> {
 
 export function makeInitialState(): GameState {
   return {
-    version: 2,
+    version: 3,
     reel: {
       icons: [
         { id: stableId('blank'), definitionId: 'blank' },
@@ -27,6 +28,8 @@ export function makeInitialState(): GameState {
     phase: 'market',
     lastSpinResult: null,
     spinCount: 0,
+    settings: DEFAULT_SETTINGS,
+    gameLog: [],
   }
 }
 

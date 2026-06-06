@@ -63,6 +63,6 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     valuePerColumn: 1,
     label: 'Crown',
     effect: { type: 'add_currency', currency: 'crowns', valuePerColumn: 1 },
-    cost: { currency: 'gold', amount: 10 },
+    cost: { currency: 'gold', amount: 100 },
   },
 }

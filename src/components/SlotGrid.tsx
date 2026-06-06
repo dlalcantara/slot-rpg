@@ -8,10 +8,11 @@ interface Props {
   lastSpinResult: SpinResult | null
   reel: Reel
   spinning: boolean
+  animate: boolean
   onSpinDone: () => void
 }
 
-export function SlotGrid({ lastSpinResult, reel, spinning, onSpinDone }: Props) {
+export function SlotGrid({ lastSpinResult, reel, spinning, animate, onSpinDone }: Props) {
   const columns = lastSpinResult?.columns ?? Array(5).fill(PLACEHOLDER_COL)
   const lastColIndex = columns.length - 1
 
@@ -26,6 +27,7 @@ export function SlotGrid({ lastSpinResult, reel, spinning, onSpinDone }: Props) 
           icons={col}
           reelIcons={reel.icons}
           spinning={spinning}
+          animate={animate}
           colIndex={i}
           onDone={i === lastColIndex ? onSpinDone : undefined}
         />
