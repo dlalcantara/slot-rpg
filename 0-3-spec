@@ -1,0 +1,28 @@
+Version 0.3 enhancements
+
+Currency Bar:
+  should only increase after all columns are finished spinning and the user has press confirmed on the modal (if its displayed).
+  Add a toggle "auto-convert money".  Set to true by default.  When set to false, copper does not convert to silver, silver does not convert to gold.  Instead the number just continues increasing for that specific item.
+
+In the SPIN tab
+
+Instead of always displaying the results modal, display a game log section in the spin tab.
+The game log displays spin # and the result of that spin.  Only 10 most recent spins should be displayed
+
+The results modal should only be displayed when:
+  More than 20% of the user's current food or money(gold, silver, copper) is gained
+  A crown is gained
+
+Add a toggle showing x1, x10, x100 next to the SPIN button.  x1 by default.
+When toggled to x10, spins cost 10 apple.  When toggled to x100, spins cost 100 apples.  
+
+Add a toggle "animate" near the matrix.  Set to true by default.  When set to false, do not display the Spinning animation.  Instead immediately display the resulting matrix, update the game log with the result, and update the currency bar.
+
+
+MARKET tab:
+  Crowns should now cost 100 gold in the market
+
+  Cost of items should show alternate purchase cost (1 silver or 100 copper for example)
+
+Persistence:
+  Persist in local storage the toggled settings (auto-convert, animate, etc.) selected by the user.  Also persist the last 10 spins (displayed in game log).  These should be reflected when reloading the page.
