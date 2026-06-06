@@ -92,7 +92,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       currencies = applyAutoConversions(currencies)
       const phase = checkPhase(currencies)
 
-      const newState: GameState = { ...state, currencies, phase, lastSpinResult: spinResult }
+      const newState: GameState = { ...state, currencies, phase, lastSpinResult: spinResult, spinCount: state.spinCount + 1 }
       saveState(newState)
       return newState
     }

@@ -14,10 +14,9 @@ function buildInitialCurrencies(): Record<string, number> {
 
 export function makeInitialState(): GameState {
   return {
-    version: 1,
+    version: 2,
     reel: {
       icons: [
-        { id: stableId('blank'), definitionId: 'blank' },
         { id: stableId('blank'), definitionId: 'blank' },
         { id: stableId('blank'), definitionId: 'blank' },
         { id: stableId('apple'), definitionId: 'apple' },
@@ -27,6 +26,7 @@ export function makeInitialState(): GameState {
     currencies: buildInitialCurrencies(),
     phase: 'market',
     lastSpinResult: null,
+    spinCount: 0,
   }
 }
 

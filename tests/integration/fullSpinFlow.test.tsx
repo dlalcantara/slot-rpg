@@ -34,20 +34,20 @@ describe('full spin flow integration', () => {
 
   it('shows spin button and food counter on load', () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: /spin/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Spin the reels' })).toBeInTheDocument()
     expect(screen.getByText(/food/i)).toBeInTheDocument()
   })
 
   it('food decrements after clicking SPIN', () => {
     render(<App />)
     expect(screen.getByText('100')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: /spin/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
     expect(screen.getByText('99')).toBeInTheDocument()
   })
 
   it('shows game over screen when food reaches 0', () => {
     render(<App />)
-    const spinBtn = screen.getByRole('button', { name: /spin/i })
+    const spinBtn = screen.getByRole('button', { name: 'Spin the reels' })
     for (let i = 0; i < 100; i++) {
       if ((spinBtn as HTMLButtonElement).disabled) break
       fireEvent.click(spinBtn)
@@ -62,7 +62,7 @@ describe('full spin flow integration', () => {
     }
     mockComputeSpin.mockReturnValueOnce(winSpin)
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: /spin/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
     expect(screen.getByText(/you win/i)).toBeInTheDocument()
   })
 
@@ -73,9 +73,9 @@ describe('full spin flow integration', () => {
     }
     mockComputeSpin.mockReturnValueOnce(winSpin)
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: /spin/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
     fireEvent.click(screen.getByRole('button', { name: /continue/i }))
     expect(screen.queryByText(/you win/i)).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /spin/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Spin the reels' })).toBeInTheDocument()
   })
 })

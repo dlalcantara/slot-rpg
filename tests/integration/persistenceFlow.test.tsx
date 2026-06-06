@@ -42,7 +42,7 @@ describe('persistence flow integration', () => {
 
   it('hard reset returns game to initial state', () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: /spin/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
     expect(screen.getByText('99')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /hard reset/i }))

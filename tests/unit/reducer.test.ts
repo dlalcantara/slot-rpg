@@ -145,7 +145,7 @@ describe('HARD_RESET action', () => {
     expect(next.phase).toBe('market')
     expect(next.currencies.food).toBe(100)
     expect(next.currencies.copper).toBe(0)
-    expect(next.reel.icons.length).toBe(5)
+    expect(next.reel.icons.length).toBe(4)
     expect(next.lastSpinResult).toBeNull()
   })
 })

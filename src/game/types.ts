@@ -72,4 +72,5 @@ export interface GameState {
   currencies: Currencies
   phase: GamePhase
   lastSpinResult: SpinResult | null
+  spinCount: number
 }

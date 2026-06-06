@@ -48,4 +48,4 @@ export const CURRENCY_REGISTRY: Record<string, CurrencyDefinition> = {
   },
 }
 
-export const CURRENCY_ORDER = ['food', 'copper', 'silver', 'gold', 'crowns']
+export const CURRENCY_ORDER = ['food', 'gold', 'silver', 'copper', 'crowns']

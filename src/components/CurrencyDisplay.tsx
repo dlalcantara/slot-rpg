@@ -3,6 +3,7 @@ import { CURRENCY_REGISTRY, CURRENCY_ORDER } from '../game/currencyRegistry'
 
 interface Props {
   currencies: Currencies
+  spinCount: number
 }
 
 const COLOR: Record<string, string> = {
@@ -13,7 +14,7 @@ const COLOR: Record<string, string> = {
   crowns: 'text-purple-400',
 }
 
-export function CurrencyDisplay({ currencies }: Props) {
+export function CurrencyDisplay({ currencies, spinCount }: Props) {
   return (
     <div className="flex flex-wrap gap-3 justify-center p-3 bg-gray-800 rounded-xl border border-gray-700">
       {CURRENCY_ORDER.map((key) => {
@@ -28,6 +29,10 @@ export function CurrencyDisplay({ currencies }: Props) {
           </div>
         )
       })}
+      <div className="flex flex-col items-center min-w-12">
+        <span className="text-xs text-gray-400">Spins</span>
+        <span className="currency-value text-lg text-gray-300">{spinCount}</span>
+      </div>
     </div>
   )
 }

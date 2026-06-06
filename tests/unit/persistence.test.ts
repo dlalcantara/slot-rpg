@@ -13,7 +13,7 @@ describe('persistence', () => {
     const raw = localStorage.getItem('slot-rpg-state')
     expect(raw).not.toBeNull()
     const parsed = JSON.parse(raw!)
-    expect(parsed.version).toBe(1)
+    expect(parsed.version).toBe(2)
     expect(parsed.currencies.food).toBe(100)
   })
 
@@ -22,7 +22,7 @@ describe('persistence', () => {
     saveState(state)
     const loaded = loadState()
     expect(loaded).not.toBeNull()
-    expect(loaded!.version).toBe(1)
+    expect(loaded!.version).toBe(2)
     expect(loaded!.currencies.food).toBe(100)
   })
 
