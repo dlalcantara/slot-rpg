@@ -1,5 +1,5 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-specs/003-v03-enhancements/plan.md
+specs/004-magic-elements/plan.md
 <!-- SPECKIT END -->

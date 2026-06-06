@@ -125,7 +125,7 @@ Yes
 - **FR-007**: System MUST allow the player to lock a selected column during the Magic Phase; cost is N Earth where N equals the total number of columns currently locked + 1 (1st lock = 1 Earth, 2nd = 2 Earth, 3rd = 3 Earth). Maximum 3 columns may be locked at once.
 - **FR-007a**: All column locks MUST be cleared when the player presses SPIN. Locks do not persist across spins; the player must spend Earth to re-lock each spin.
 - **FR-007b**: During the spin animation, locked columns MUST display a visual locked state and show no spinning animation.
-- **FR-008**: System MUST allow the player to increase the value of a selected card during the Magic Phase; cost is N Fire where N is the increase-value count for this Magic Phase (1st = 1, 2nd = 2, etc.).
+- **FR-008**: System MUST allow the player to increase the value of a selected card during the Magic Phase; cost is N Fire and the card's value increases by N, where N is the number of increase-value actions used so far this Magic Phase plus 1 (1st use: costs 1 Fire, adds 1; 2nd use: costs 2 Fire, adds 2; etc.). The increment applies on top of the icon's current effective value.
 - **FR-009**: Magic action controls MUST be visually disabled when the player has insufficient currency to perform them. The magic action UI remains visible at all times during the Magic Phase even if the player has no currency at all.
 - **FR-010**: System MUST compute the slot result and award earnings only when the player presses CLAIM.
 - **FR-011**: Locked columns MUST be excluded from the next SPIN's randomization and display a visual locked indicator.
