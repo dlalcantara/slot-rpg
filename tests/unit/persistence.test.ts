@@ -14,7 +14,7 @@ describe('persistence', () => {
     const raw = localStorage.getItem('slot-rpg-state')
     expect(raw).not.toBeNull()
     const parsed = JSON.parse(raw!)
-    expect(parsed.version).toBe(3)
+    expect(parsed.version).toBe(4)
     expect(parsed.currencies.food).toBe(100)
   })
 
@@ -23,7 +23,7 @@ describe('persistence', () => {
     saveState(state)
     const loaded = loadState()
     expect(loaded).not.toBeNull()
-    expect(loaded!.version).toBe(3)
+    expect(loaded!.version).toBe(4)
     expect(loaded!.currencies.food).toBe(100)
   })
 
@@ -70,21 +70,19 @@ describe('persistence', () => {
     expect(loaded!.gameLog[0].spinNumber).toBe(1)
   })
 
-  it('migrates v2 state to v3 with DEFAULT_SETTINGS and empty gameLog', () => {
-    const v2State = {
-      version: 2,
+  it('discards state with version < 4 (no migration)', () => {
+    const v3State = {
+      version: 3,
       reel: { icons: [] },
       currencies: { food: 50, copper: 0, silver: 0, gold: 0, crowns: 0 },
       phase: 'market',
       lastSpinResult: null,
       spinCount: 5,
+      settings: DEFAULT_SETTINGS,
+      gameLog: [],
     }
-    localStorage.setItem('slot-rpg-state', JSON.stringify(v2State))
+    localStorage.setItem('slot-rpg-state', JSON.stringify(v3State))
     const loaded = loadState()
-    expect(loaded).not.toBeNull()
-    expect(loaded!.version).toBe(3)
-    expect(loaded!.settings).toEqual(DEFAULT_SETTINGS)
-    expect(loaded!.gameLog).toEqual([])
-    expect(loaded!.spinCount).toBe(5) // preserved
+    expect(loaded).toBeNull()
   })
 })

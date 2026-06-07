@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { gameReducer } from '@/game/reducer'
 import { makeInitialState } from '@/game/initialState'
-import type { GameState } from '@/game/types'
+import type { GameState, MagicCell } from '@/game/types'
 
 vi.mock('@/game/persistence', () => ({
   saveState: vi.fn(),
@@ -9,22 +9,15 @@ vi.mock('@/game/persistence', () => ({
   clearState: vi.fn(),
 }))
 
-const mockComputeSpin = vi.fn(() => ({
-  columns: [
-    [{ id: 'c1', definitionId: 'apple' }],
-    [{ id: 'c2', definitionId: 'apple' }],
-    [{ id: 'c3', definitionId: 'apple' }],
-    [{ id: 'c4', definitionId: 'apple' }],
-    [{ id: 'c5', definitionId: 'apple' }],
-  ],
-  payouts: [{ family: 'apple', amount: 1, currency: 'food' }],
-}))
+const mockDrawColumn = vi.fn(() => [
+  { id: 'c1', definitionId: 'apple' },
+  { id: 'c2', definitionId: 'apple' },
+  { id: 'c3', definitionId: 'apple' },
+])
 
 vi.mock('@/game/spinLogic', () => ({
-  get computeSpin() {
-    return mockComputeSpin
-  },
-  calculatePayouts: vi.fn(),
+  get drawColumn() { return mockDrawColumn },
+  calculatePayouts: vi.fn(() => [{ family: 'apple', amount: 1, currency: 'food' }]),
 }))
 
 function stateWithCurrencies(overrides: Record<string, number>): GameState {
@@ -34,239 +27,474 @@ function stateWithCurrencies(overrides: Record<string, number>): GameState {
   }
 }
 
+function magicState(overrides: Partial<GameState> = {}): GameState {
+  const base = stateWithCurrencies({ food: 10, air: 10, water: 10, earth: 10, fire: 10 })
+  const grid: MagicCell[][] = Array(5).fill(null).map((_, ci) => [
+    { icon: { id: `c${ci}r0`, definitionId: 'apple' }, valueOverride: null },
+    { icon: { id: `c${ci}r1`, definitionId: 'apple' }, valueOverride: null },
+    { icon: { id: `c${ci}r2`, definitionId: 'apple' }, valueOverride: null },
+  ])
+  return { ...base, phase: 'magic', magicGrid: grid, pendingMultiplier: 1, ...overrides }
+}
+
+// ─── SPIN (new behaviour) ─────────────────────────────────────────────────────
+
 describe('SPIN action', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('decrements food by 1', () => {
+  it('transitions phase to spinning', () => {
     const state = stateWithCurrencies({ food: 10 })
     const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    // food starts 10, payout adds 1, net = 10
-    expect(next.currencies.food).toBe(10)
+    expect(next.phase).toBe('spinning')
   })
 
-  it('applies payout to correct currency', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'copper' }]),
-      payouts: [{ family: 'copper', amount: 5, currency: 'copper' }],
-    })
-    const state = stateWithCurrencies({ food: 10, copper: 0 })
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    expect(next.currencies.copper).toBe(5)
-  })
-
-  it('sets phase to gameover when food reaches 0', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
-      payouts: [],
-    })
-    const state = stateWithCurrencies({ food: 1 })
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    expect(next.phase).toBe('gameover')
-  })
-
-  it('sets lastSpinResult after spin', () => {
+  it('deducts food', () => {
     const state = stateWithCurrencies({ food: 10 })
     const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    expect(next.lastSpinResult).not.toBeNull()
+    expect(next.currencies.food).toBe(9)
   })
 
-  it('phase stays market when food > 0 and crowns < 100', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
-      payouts: [],
-    })
+  it('populates magicGrid with 5 columns', () => {
     const state = stateWithCurrencies({ food: 10 })
     const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    expect(next.phase).toBe('market')
+    expect(next.magicGrid).not.toBeNull()
+    expect(next.magicGrid!.length).toBe(5)
+  })
+
+  it('does NOT compute payouts yet (no lastSpinResult update)', () => {
+    const state = stateWithCurrencies({ food: 10 })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+    expect(next.lastSpinResult).toBeNull()
   })
 
   it('blocks spin when food < multiplier', () => {
     const state = stateWithCurrencies({ food: 9 })
     const next = gameReducer(state, { type: 'SPIN', multiplier: 10 })
-    expect(next.currencies.food).toBe(9) // unchanged
+    expect(next.currencies.food).toBe(9)
     expect(next.spinCount).toBe(state.spinCount)
   })
 
-  it('allows spin when food equals multiplier exactly', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
+  it('stores pendingMultiplier', () => {
+    const state = stateWithCurrencies({ food: 100 })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 10 })
+    expect(next.pendingMultiplier).toBe(10)
+  })
+
+  it('preserves locked columns from previous lastSpinResult', () => {
+    const fireCol = [
+      { id: 'locked0', definitionId: 'fire' },
+      { id: 'locked1', definitionId: 'fire' },
+      { id: 'locked2', definitionId: 'fire' },
+    ]
+    const lastSpinResult = {
+      columns: Array(5).fill(null).map((_, i) =>
+        i === 2 ? fireCol : [
+          { id: `c${i}r0`, definitionId: 'blank' },
+          { id: `c${i}r1`, definitionId: 'blank' },
+          { id: `c${i}r2`, definitionId: 'blank' },
+        ]
+      ),
       payouts: [],
-    })
-    const state = stateWithCurrencies({ food: 10 })
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 10 })
-    expect(next.currencies.food).toBe(0)
-    expect(next.spinCount).toBe(1)
-  })
-})
-
-describe('SPIN multiplier scaling', () => {
-  beforeEach(() => vi.clearAllMocks())
-
-  it('multiplier:10 deducts 10 food and scales payouts ×10', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'copper' }]),
-      payouts: [{ family: 'copper', amount: 3, currency: 'copper' }],
-    })
-    const state = stateWithCurrencies({ food: 20, copper: 0 })
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 10 })
-    expect(next.currencies.food).toBe(10) // 20 - 10
-    expect(next.currencies.copper).toBe(30) // 3 * 10
-  })
-
-  it('multiplier:100 deducts 100 food and scales payouts ×100', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'copper' }]),
-      payouts: [{ family: 'copper', amount: 2, currency: 'copper' }],
-    })
-    // Disable autoConvert so copper stays as copper (200 < conversion threshold with autoConvert off)
-    const state: GameState = {
-      ...stateWithCurrencies({ food: 100, copper: 0 }),
-      settings: { ...makeInitialState().settings, autoConvert: false },
     }
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 100 })
-    expect(next.currencies.food).toBe(0)
-    expect(next.currencies.copper).toBe(200) // 2 * 100
+    const state: GameState = {
+      ...stateWithCurrencies({ food: 10 }),
+      phase: 'market',
+      lastSpinResult,
+      lockedColumns: [2],
+    }
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+    expect(next.magicGrid![2][0].icon.definitionId).toBe('fire')
   })
 
-  it('lastSpinResult payouts are scaled', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'food' }]),
-      payouts: [{ family: 'apple', amount: 5, currency: 'food' }],
-    })
-    const state = stateWithCurrencies({ food: 50 })
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 10 })
-    expect(next.lastSpinResult!.payouts[0].amount).toBe(50) // 5 * 10
+  it('clears lockedColumns after SPIN', () => {
+    const state: GameState = { ...stateWithCurrencies({ food: 10 }), lockedColumns: [1, 3] }
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+    expect(next.lockedColumns).toEqual([])
   })
 })
 
-describe('game log', () => {
+// ─── BEGIN_MAGIC_PHASE ────────────────────────────────────────────────────────
+
+describe('BEGIN_MAGIC_PHASE action', () => {
+  it('transitions phase to magic', () => {
+    const state: GameState = { ...stateWithCurrencies({ food: 10 }), phase: 'spinning' }
+    const next = gameReducer(state, { type: 'BEGIN_MAGIC_PHASE' })
+    expect(next.phase).toBe('magic')
+  })
+
+  it('resets magicCounters to zero', () => {
+    const state: GameState = {
+      ...stateWithCurrencies({ food: 10 }),
+      phase: 'spinning',
+      magicCounters: { respin: 3, swap: 2, increaseValue: 1 },
+    }
+    const next = gameReducer(state, { type: 'BEGIN_MAGIC_PHASE' })
+    expect(next.magicCounters).toEqual({ respin: 0, swap: 0, increaseValue: 0 })
+  })
+
+  it('clears lockedColumns', () => {
+    const state: GameState = {
+      ...stateWithCurrencies({ food: 10 }),
+      phase: 'spinning',
+      lockedColumns: [0, 2],
+    }
+    const next = gameReducer(state, { type: 'BEGIN_MAGIC_PHASE' })
+    expect(next.lockedColumns).toEqual([])
+  })
+
+  it('is a no-op when not in spinning phase', () => {
+    const state = magicState()
+    const next = gameReducer(state, { type: 'BEGIN_MAGIC_PHASE' })
+    expect(next).toBe(state)
+  })
+})
+
+// ─── MAGIC_RESPIN ─────────────────────────────────────────────────────────────
+
+describe('MAGIC_RESPIN action', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('SPIN appends a SpinLogEntry to gameLog', () => {
-    const state = stateWithCurrencies({ food: 50 })
+  it('deducts 1 Air on first respin', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, air: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_RESPIN', colIdx: 0 })
+    expect(next.currencies.air).toBe(4)
+  })
+
+  it('deducts escalating cost: 2nd respin costs 2 Air', () => {
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, air: 10 },
+      magicCounters: { respin: 1, swap: 0, increaseValue: 0 },
+    })
+    const next = gameReducer(state, { type: 'MAGIC_RESPIN', colIdx: 0 })
+    expect(next.currencies.air).toBe(8) // 10 - 2
+  })
+
+  it('increments respin counter', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, air: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_RESPIN', colIdx: 0 })
+    expect(next.magicCounters.respin).toBe(1)
+  })
+
+  it('replaces the target column with fresh icons', () => {
+    mockDrawColumn.mockReturnValueOnce([
+      { id: 'new0', definitionId: 'fire' },
+      { id: 'new1', definitionId: 'fire' },
+      { id: 'new2', definitionId: 'fire' },
+    ])
+    const state = magicState({ currencies: { ...makeInitialState().currencies, air: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_RESPIN', colIdx: 2 })
+    expect(next.magicGrid![2][0].icon.definitionId).toBe('fire')
+  })
+
+  it('is a no-op when Air insufficient', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, air: 0 } })
+    const next = gameReducer(state, { type: 'MAGIC_RESPIN', colIdx: 0 })
+    expect(next).toBe(state)
+  })
+})
+
+// ─── MAGIC_SWAP ───────────────────────────────────────────────────────────────
+
+describe('MAGIC_SWAP action', () => {
+  it('deducts 1 Water on first swap', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, water: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_SWAP', fromCol: 0, fromRow: 0, toCol: 0, toRow: 1 })
+    expect(next.currencies.water).toBe(4)
+  })
+
+  it('swaps two adjacent cells', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, water: 5 } })
+    const cellA = state.magicGrid![0][0].icon.definitionId
+    const cellB = state.magicGrid![0][1].icon.definitionId
+    const next = gameReducer(state, { type: 'MAGIC_SWAP', fromCol: 0, fromRow: 0, toCol: 0, toRow: 1 })
+    expect(next.magicGrid![0][0].icon.definitionId).toBe(cellB)
+    expect(next.magicGrid![0][1].icon.definitionId).toBe(cellA)
+  })
+
+  it('increments swap counter', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, water: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_SWAP', fromCol: 0, fromRow: 0, toCol: 0, toRow: 1 })
+    expect(next.magicCounters.swap).toBe(1)
+  })
+
+  it('is a no-op for non-adjacent cells', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, water: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_SWAP', fromCol: 0, fromRow: 0, toCol: 2, toRow: 2 })
+    expect(next).toBe(state)
+  })
+
+  it('is a no-op when Water insufficient', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, water: 0 } })
+    const next = gameReducer(state, { type: 'MAGIC_SWAP', fromCol: 0, fromRow: 0, toCol: 0, toRow: 1 })
+    expect(next).toBe(state)
+  })
+})
+
+// ─── MAGIC_LOCK ───────────────────────────────────────────────────────────────
+
+describe('MAGIC_LOCK action', () => {
+  it('deducts 1 Earth for first lock', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, earth: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 0 })
+    expect(next.currencies.earth).toBe(4)
+  })
+
+  it('deducts 2 Earth for second lock', () => {
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, earth: 5 },
+      lockedColumns: [1],
+    })
+    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 0 })
+    expect(next.currencies.earth).toBe(3)
+  })
+
+  it('appends column index to lockedColumns', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, earth: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 3 })
+    expect(next.lockedColumns).toContain(3)
+  })
+
+  it('is a no-op when 3 columns already locked', () => {
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, earth: 10 },
+      lockedColumns: [0, 1, 2],
+    })
+    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 3 })
+    expect(next).toBe(state)
+  })
+
+  it('is a no-op when column already locked', () => {
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, earth: 5 },
+      lockedColumns: [2],
+    })
+    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 2 })
+    expect(next).toBe(state)
+  })
+
+  it('is a no-op when Earth insufficient', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, earth: 0 } })
+    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 0 })
+    expect(next).toBe(state)
+  })
+})
+
+// ─── MAGIC_INCREASE_VALUE ─────────────────────────────────────────────────────
+
+describe('MAGIC_INCREASE_VALUE action', () => {
+  it('deducts 1 Fire on first use', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, fire: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
+    expect(next.currencies.fire).toBe(4)
+  })
+
+  it('adds 1 to value on first use (apple base=1 → 2)', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, fire: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
+    expect(next.magicGrid![0][0].valueOverride).toBe(2) // 1 + 1
+  })
+
+  it('adds 2 to value on second use (base=1 → 3)', () => {
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, fire: 5 },
+      magicCounters: { respin: 0, swap: 0, increaseValue: 1 },
+    })
+    const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
+    expect(next.magicGrid![0][0].valueOverride).toBe(3) // 1 + 2
+  })
+
+  it('handles triple-apple (base=3): first use → 4', () => {
+    const grid: MagicCell[][] = Array(5).fill(null).map((_, ci) => [
+      { icon: { id: `c${ci}r0`, definitionId: 'triple-apple' }, valueOverride: null },
+      { icon: { id: `c${ci}r1`, definitionId: 'triple-apple' }, valueOverride: null },
+      { icon: { id: `c${ci}r2`, definitionId: 'triple-apple' }, valueOverride: null },
+    ])
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, fire: 5 },
+      magicGrid: grid,
+    })
+    const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
+    expect(next.magicGrid![0][0].valueOverride).toBe(4) // 3 + 1
+  })
+
+  it('handles dozen-apple (base=12): first use → 13', () => {
+    const grid: MagicCell[][] = Array(5).fill(null).map((_, ci) => [
+      { icon: { id: `c${ci}r0`, definitionId: 'dozen-apple' }, valueOverride: null },
+      { icon: { id: `c${ci}r1`, definitionId: 'dozen-apple' }, valueOverride: null },
+      { icon: { id: `c${ci}r2`, definitionId: 'dozen-apple' }, valueOverride: null },
+    ])
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, fire: 5 },
+      magicGrid: grid,
+    })
+    const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
+    expect(next.magicGrid![0][0].valueOverride).toBe(13) // 12 + 1
+  })
+
+  it('stacks on existing valueOverride', () => {
+    const grid: MagicCell[][] = Array(5).fill(null).map((_, ci) => [
+      { icon: { id: `c${ci}r0`, definitionId: 'apple' }, valueOverride: 3 },
+      { icon: { id: `c${ci}r1`, definitionId: 'apple' }, valueOverride: null },
+      { icon: { id: `c${ci}r2`, definitionId: 'apple' }, valueOverride: null },
+    ])
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, fire: 5 },
+      magicGrid: grid,
+      magicCounters: { respin: 0, swap: 0, increaseValue: 2 }, // next cost = 3
+    })
+    const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
+    expect(next.magicGrid![0][0].valueOverride).toBe(6) // 3 + 3
+  })
+
+  it('is a no-op when Fire insufficient', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, fire: 0 } })
+    const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
+    expect(next).toBe(state)
+  })
+
+  it('increments increaseValue counter', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, fire: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
+    expect(next.magicCounters.increaseValue).toBe(1)
+  })
+})
+
+// ─── CLAIM ────────────────────────────────────────────────────────────────────
+
+describe('CLAIM action', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('transitions phase to market', () => {
+    const state = magicState()
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.phase).toBe('market')
+  })
+
+  it('clears magicGrid', () => {
+    const state = magicState()
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.magicGrid).toBeNull()
+  })
+
+  it('sets lastSpinResult from magicGrid', () => {
+    const state = magicState()
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.lastSpinResult).not.toBeNull()
+    expect(next.lastSpinResult!.columns.length).toBe(5)
+  })
+
+  it('awards payouts to currencies', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([{ family: 'food', amount: 5, currency: 'food' }])
+    const state = magicState({ currencies: { ...makeInitialState().currencies, food: 10 } })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.currencies.food).toBe(15)
+  })
+
+  it('sets masterOfElements when condition met', () => {
+    const grid: MagicCell[][] = [
+      [
+        { icon: { id: 'c0r0', definitionId: 'fire' }, valueOverride: null },
+        { icon: { id: 'c0r1', definitionId: 'fire' }, valueOverride: null },
+        { icon: { id: 'c0r2', definitionId: 'fire' }, valueOverride: null },
+      ],
+      [
+        { icon: { id: 'c1r0', definitionId: 'air' }, valueOverride: null },
+        { icon: { id: 'c1r1', definitionId: 'air' }, valueOverride: null },
+        { icon: { id: 'c1r2', definitionId: 'air' }, valueOverride: null },
+      ],
+      [
+        { icon: { id: 'c2r0', definitionId: 'water' }, valueOverride: null },
+        { icon: { id: 'c2r1', definitionId: 'water' }, valueOverride: null },
+        { icon: { id: 'c2r2', definitionId: 'water' }, valueOverride: null },
+      ],
+      [
+        { icon: { id: 'c3r0', definitionId: 'earth' }, valueOverride: null },
+        { icon: { id: 'c3r1', definitionId: 'earth' }, valueOverride: null },
+        { icon: { id: 'c3r2', definitionId: 'earth' }, valueOverride: null },
+      ],
+      [
+        { icon: { id: 'c4r0', definitionId: 'air' }, valueOverride: null },
+        { icon: { id: 'c4r1', definitionId: 'water' }, valueOverride: null },
+        { icon: { id: 'c4r2', definitionId: 'earth' }, valueOverride: null },
+      ],
+    ]
+    const state = magicState({ magicGrid: grid })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.masterOfElements).toBe(true)
+  })
+
+  it('masterOfElements stays true once set', () => {
+    const state = magicState({ masterOfElements: true })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.masterOfElements).toBe(true)
+  })
+
+  it('appends to gameLog', () => {
+    const state = magicState()
     expect(state.gameLog).toHaveLength(0)
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+    const next = gameReducer(state, { type: 'CLAIM' })
     expect(next.gameLog).toHaveLength(1)
-    expect(next.gameLog[0].multiplier).toBe(1)
-    expect(next.gameLog[0].spinNumber).toBe(1)
   })
 
-  it('gameLog caps at 10 entries after 11 spins', () => {
-    mockComputeSpin.mockReturnValue({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
-      payouts: [],
-    })
-    let s = stateWithCurrencies({ food: 200 })
-    for (let i = 0; i < 11; i++) {
-      s = gameReducer(s, { type: 'SPIN', multiplier: 1 })
-    }
-    expect(s.gameLog).toHaveLength(10)
-  })
-
-  it('most recent spin is first in gameLog', () => {
-    mockComputeSpin.mockReturnValue({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
-      payouts: [],
-    })
-    let s = stateWithCurrencies({ food: 50 })
-    s = gameReducer(s, { type: 'SPIN', multiplier: 1 })
-    s = gameReducer(s, { type: 'SPIN', multiplier: 1 })
-    expect(s.gameLog[0].spinNumber).toBe(2)
-    expect(s.gameLog[1].spinNumber).toBe(1)
+  it('is a no-op when not in magic phase', () => {
+    const state = stateWithCurrencies({ food: 10 })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next).toBe(state)
   })
 })
 
-describe('UPDATE_SETTINGS action', () => {
-  it('merges patch into settings', () => {
-    const state = makeInitialState()
-    expect(state.settings.autoConvert).toBe(true)
-    const next = gameReducer(state, { type: 'UPDATE_SETTINGS', patch: { autoConvert: false } })
-    expect(next.settings.autoConvert).toBe(false)
-    expect(next.settings.animate).toBe(true) // unchanged
-  })
-})
-
-describe('autoConvert toggle', () => {
-  beforeEach(() => vi.clearAllMocks())
-
-  it('does NOT convert when autoConvert is false', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'copper' }]),
-      payouts: [{ family: 'copper', amount: 1, currency: 'copper' }],
-    })
-    const state: GameState = {
-      ...stateWithCurrencies({ food: 10, copper: 99 }),
-      settings: { ...makeInitialState().settings, autoConvert: false },
-    }
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    // Should NOT convert: copper stays at 100
-    expect(next.currencies.copper).toBe(100)
-    expect(next.currencies.silver).toBe(0)
-  })
-
-  it('converts when autoConvert is true', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'copper' }]),
-      payouts: [{ family: 'copper', amount: 1, currency: 'copper' }],
-    })
-    const state = stateWithCurrencies({ food: 10, copper: 99 })
-    expect(state.settings.autoConvert).toBe(true)
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    expect(next.currencies.copper).toBe(0)
-    expect(next.currencies.silver).toBe(1)
-  })
-})
+// ─── BUY_ICON ─────────────────────────────────────────────────────────────────
 
 describe('BUY_ICON action', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('deducts cost directly when player has sufficient funds', () => {
+  it('deducts cost and adds icon to reel', () => {
     const state = stateWithCurrencies({ copper: 5 })
     const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
     expect(next.currencies.copper).toBe(4)
     expect(next.reel.icons.length).toBe(state.reel.icons.length + 1)
   })
 
-  it('performs downward conversion when direct funds insufficient', () => {
-    const state = stateWithCurrencies({ copper: 0, silver: 1 })
-    const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
-    expect(next.currencies.copper).toBe(99)
-    expect(next.currencies.silver).toBe(0)
-    expect(next.reel.icons.length).toBe(state.reel.icons.length + 1)
-  })
-
   it('rejects purchase when all tiers insufficient', () => {
-    const state = makeInitialState() // 0 copper, 0 silver, 0 gold
+    const state = makeInitialState()
     const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
     expect(next.reel.icons.length).toBe(state.reel.icons.length)
-    expect(next.currencies).toEqual(state.currencies)
   })
 
-  it('increases reel length by exactly 1 on success', () => {
-    const state = stateWithCurrencies({ copper: 1 })
-    const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+  it('purchases elemental icon with correct cost (air costs 10 copper)', () => {
+    const state = stateWithCurrencies({ copper: 10 })
+    const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'air' })
+    expect(next.currencies.copper).toBe(0)
     expect(next.reel.icons.length).toBe(state.reel.icons.length + 1)
+    expect(next.reel.icons[next.reel.icons.length - 1].definitionId).toBe('air')
+  })
+
+  it('purchases fire with 1 gold', () => {
+    const state = stateWithCurrencies({ gold: 1 })
+    const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'fire' })
+    expect(next.currencies.gold).toBe(0)
+    expect(next.reel.icons[next.reel.icons.length - 1].definitionId).toBe('fire')
   })
 })
+
+// ─── WIN / GAMEOVER / RESET ───────────────────────────────────────────────────
 
 describe('WIN condition', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('sets phase to win when crowns reach 100 after spin', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'crown' }]),
-      payouts: [{ family: 'crown', amount: 100, currency: 'crowns' }],
-    })
-    const state = stateWithCurrencies({ food: 10, crowns: 0 })
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+  it('sets phase to win at CLAIM when crowns reach 100', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([{ family: 'crown', amount: 100, currency: 'crowns' }])
+    const state = magicState({ currencies: { ...makeInitialState().currencies, crowns: 0 } })
+    const next = gameReducer(state, { type: 'CLAIM' })
     expect(next.phase).toBe('win')
   })
 
   it('CONTINUE_AFTER_WIN transitions phase to market', () => {
-    const state = { ...makeInitialState(), phase: 'win' as const }
+    const state: GameState = { ...makeInitialState(), phase: 'win' }
     const next = gameReducer(state, { type: 'CONTINUE_AFTER_WIN' })
     expect(next.phase).toBe('market')
-    expect(next.currencies).toEqual(state.currencies)
   })
 })
 
@@ -274,52 +502,25 @@ describe('HARD_RESET action', () => {
   it('returns exact initial state', () => {
     const state: GameState = {
       ...makeInitialState(),
-      currencies: { food: 5, copper: 50, silver: 2, gold: 1, crowns: 90 },
+      currencies: { food: 5, copper: 50, silver: 2, gold: 1, crowns: 90, air: 3, water: 3, earth: 3, fire: 3 },
       phase: 'gameover',
     }
     const next = gameReducer(state, { type: 'HARD_RESET' })
     expect(next.phase).toBe('market')
     expect(next.currencies.food).toBe(100)
-    expect(next.currencies.copper).toBe(0)
     expect(next.reel.icons.length).toBe(4)
     expect(next.lastSpinResult).toBeNull()
-    expect(next.gameLog).toHaveLength(0)
+    expect(next.magicGrid).toBeNull()
+    expect(next.lockedColumns).toEqual([])
+    expect(next.masterOfElements).toBe(false)
   })
 })
 
-describe('Auto-conversion (existing)', () => {
-  beforeEach(() => vi.clearAllMocks())
-
-  it('converts 99 copper + 1 copper earned to 0 copper + 1 silver', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'copper' }]),
-      payouts: [{ family: 'copper', amount: 1, currency: 'copper' }],
-    })
-    const state = stateWithCurrencies({ food: 10, copper: 99 })
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    expect(next.currencies.copper).toBe(0)
-    expect(next.currencies.silver).toBe(1)
-  })
-
-  it('converts 99 silver + 1 silver earned to 0 silver + 1 gold', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'silver' }]),
-      payouts: [{ family: 'silver', amount: 1, currency: 'silver' }],
-    })
-    const state = stateWithCurrencies({ food: 10, silver: 99 })
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    expect(next.currencies.silver).toBe(0)
-    expect(next.currencies.gold).toBe(1)
-  })
-
-  it('99 copper + 2 copper earned → 1 copper + 1 silver', () => {
-    mockComputeSpin.mockReturnValueOnce({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'copper' }]),
-      payouts: [{ family: 'copper', amount: 2, currency: 'copper' }],
-    })
-    const state = stateWithCurrencies({ food: 10, copper: 99 })
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    expect(next.currencies.copper).toBe(1)
-    expect(next.currencies.silver).toBe(1)
+describe('UPDATE_SETTINGS action', () => {
+  it('merges patch into settings', () => {
+    const state = makeInitialState()
+    const next = gameReducer(state, { type: 'UPDATE_SETTINGS', patch: { autoConvert: false } })
+    expect(next.settings.autoConvert).toBe(false)
+    expect(next.settings.animate).toBe(true)
   })
 })

@@ -14,6 +14,25 @@ function makeColumns(colDefs: string[][]): Icon[][] {
   )
 }
 
+describe('calculatePayouts — value overrides', () => {
+  it('uses override value instead of catalog valuePerColumn', () => {
+    const columns = makeColumns([
+      ['apple'], ['apple'], ['apple'], ['apple'], ['apple'],
+    ])
+    // Override icon in col 0, row 0 to value 5
+    const overrides = new Map([[columns[0][0].id, 5]])
+    const payouts = calculatePayouts(columns, overrides)
+    const foodPayout = payouts.find((p) => p.currency === 'food')
+    expect(foodPayout!.amount).toBe(5) // 5 * 1 * 1 * 1 * 1
+  })
+
+  it('elemental icon appears in all 5 columns → awards elemental currency', () => {
+    const columns = makeColumns([['air'], ['air'], ['air'], ['air'], ['air']])
+    const payouts = calculatePayouts(columns)
+    expect(payouts.find((p) => p.currency === 'air')).toBeDefined()
+  })
+})
+
 describe('computeSpin', () => {
   it('produces exactly 5 columns each with 3 icons', () => {
     const reel = makeReel(['blank', 'apple', 'copper', 'blank', 'blank'])

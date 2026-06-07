@@ -4,14 +4,31 @@ import { ICON_CATALOG } from '../game/catalog'
 
 interface Props {
   icons: Icon[]
+  valueOverrides: Map<string, number>
   reelIcons: Icon[]
   spinning: boolean
   animate: boolean
   colIndex: number
+  locked: boolean
+  isMagicPhase: boolean
   onDone?: () => void
+  onCellClick: (rowIdx: number) => void
+  onColumnClick: () => void
 }
 
-export function ReelColumn({ icons, reelIcons, spinning, animate, colIndex, onDone }: Props) {
+export function ReelColumn({
+  icons,
+  valueOverrides,
+  reelIcons,
+  spinning,
+  animate,
+  colIndex,
+  locked,
+  isMagicPhase,
+  onDone,
+  onCellClick,
+  onColumnClick,
+}: Props) {
   const [animating, setAnimating] = useState(false)
   const [displayIcons, setDisplayIcons] = useState<Icon[]>(icons)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -28,7 +45,13 @@ export function ReelColumn({ icons, reelIcons, spinning, animate, colIndex, onDo
       return
     }
 
-    // When animate is off, immediately show result and signal done
+    if (locked) {
+      setAnimating(false)
+      setDisplayIcons(icons)
+      onDone?.()
+      return
+    }
+
     if (!animate) {
       setAnimating(false)
       setDisplayIcons(icons)
@@ -61,16 +84,35 @@ export function ReelColumn({ icons, reelIcons, spinning, animate, colIndex, onDo
   }, [spinning]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="flex flex-col gap-2" role="list" aria-label={`Reel column ${colIndex + 1}`}>
+    <div
+      className={`flex flex-col gap-2 cursor-pointer ${isMagicPhase ? 'hover:opacity-80' : ''}`}
+      role="list"
+      aria-label={`Reel column ${colIndex + 1}`}
+      onClick={onColumnClick}
+    >
+      {locked && (
+        <div className="text-center text-xs text-amber-400 font-bold">🔒</div>
+      )}
       {displayIcons.map((icon, i) => {
         const def = ICON_CATALOG[icon.definitionId]
+        const effectiveValue = valueOverrides.get(icon.id) ?? def?.valuePerColumn
+        const hasOverride = valueOverrides.has(icon.id)
         return (
           <div
             key={i}
-            className={`icon-cell ${animating ? 'bg-blue-900 ring-2 ring-blue-400 brightness-125' : ''}`}
+            className={`icon-cell ${animating && !locked ? 'bg-blue-900 ring-2 ring-blue-400 brightness-125' : ''} ${
+              isMagicPhase ? 'cursor-pointer hover:ring-2 hover:ring-purple-400' : ''
+            } ${locked ? 'ring-2 ring-amber-500' : ''}`}
             role="listitem"
+            onClick={(e) => {
+              e.stopPropagation()
+              onCellClick(i)
+            }}
           >
-            {def?.label ?? '?'}
+            <span>{def?.label ?? '?'}</span>
+            {hasOverride && (
+              <span className="text-xs text-green-400 ml-1">(×{effectiveValue})</span>
+            )}
           </div>
         )
       })}

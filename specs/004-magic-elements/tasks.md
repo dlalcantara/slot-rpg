@@ -19,11 +19,11 @@
 
 **Purpose**: Type system and persistence groundwork that everything else depends on.
 
-- [ ] T001 Extend `GamePhase` union in `src/game/types.ts` to include `'magic'`
-- [ ] T002 Add `MagicCell`, `MagicCounters` interfaces and extend `GameState` with `magicGrid`, `lockedColumns`, `magicCounters`, `masterOfElements` fields in `src/game/types.ts`
-- [ ] T003 Add new `GameAction` variants (`BEGIN_MAGIC_PHASE`, `MAGIC_RESPIN`, `MAGIC_SWAP`, `MAGIC_LOCK`, `MAGIC_INCREASE_VALUE`, `CLAIM`) to the union in `src/game/types.ts`
-- [ ] T004 Bump `GameState.version` from `3` to `4` and update `makeInitialState` to include new fields (`magicGrid: null`, `lockedColumns: []`, `magicCounters: {respin:0,swap:0,increaseValue:0}`, `masterOfElements: false`) in `src/game/initialState.ts`
-- [ ] T005 Update `loadState` in `src/game/persistence.ts` to discard stored state with `version < 4` and return `null`
+- [x] T001 Extend `GamePhase` union in `src/game/types.ts` to include `'magic'`
+- [x] T002 Add `MagicCell`, `MagicCounters` interfaces and extend `GameState` with `magicGrid`, `lockedColumns`, `magicCounters`, `masterOfElements` fields in `src/game/types.ts`
+- [x] T003 Add new `GameAction` variants (`BEGIN_MAGIC_PHASE`, `MAGIC_RESPIN`, `MAGIC_SWAP`, `MAGIC_LOCK`, `MAGIC_INCREASE_VALUE`, `CLAIM`) to the union in `src/game/types.ts`
+- [x] T004 Bump `GameState.version` from `3` to `4` and update `makeInitialState` to include new fields (`magicGrid: null`, `lockedColumns: []`, `magicCounters: {respin:0,swap:0,increaseValue:0}`, `masterOfElements: false`) in `src/game/initialState.ts`
+- [x] T005 Update `loadState` in `src/game/persistence.ts` to discard stored state with `version < 4` and return `null`
 
 **Checkpoint**: Type system and persistence migration ready — no runtime changes yet.
 
@@ -35,9 +35,9 @@
 
 **⚠️ CRITICAL**: Complete before any user story implementation.
 
-- [ ] T006 [P] Add `air`, `water`, `earth`, `fire` `IconDefinition` entries to `src/game/catalog.ts` with correct costs (air: copper×10, water: silver×1, earth: silver×10, fire: gold×1) and `add_currency` effects
-- [ ] T007 [P] Add `air`, `water`, `earth`, `fire` `CurrencyDefinition` entries to `src/game/currencyRegistry.ts` (startingAmount: 0, no auto-convert, no win/loss conditions); append to `CURRENCY_ORDER`
-- [ ] T008 Update starting reel in `src/game/initialState.ts` from `[blank, blank, apple, copper]` to `[blank, apple, copper, air]`
+- [x] T006 [P] Add `air`, `water`, `earth`, `fire` `IconDefinition` entries to `src/game/catalog.ts` with correct costs (air: copper×10, water: silver×1, earth: silver×10, fire: gold×1) and `add_currency` effects
+- [x] T007 [P] Add `air`, `water`, `earth`, `fire` `CurrencyDefinition` entries to `src/game/currencyRegistry.ts` (startingAmount: 0, no auto-convert, no win/loss conditions); append to `CURRENCY_ORDER`
+- [x] T008 Update starting reel in `src/game/initialState.ts` from `[blank, blank, apple, copper]` to `[blank, apple, copper, air]`
 
 **Checkpoint**: Catalog and registry ready — foundational data complete.
 
@@ -51,14 +51,14 @@
 
 ### Tests for User Story 1 ⚠️ Write FIRST — confirm they FAIL before implementing
 
-- [ ] T009 [P] [US1] Unit test: purchasing each elemental icon deducts correct money and appends icon to reel (no currency awarded yet) in `tests/unit/catalog.test.ts`
-- [ ] T010 [P] [US1] Unit test: `calculatePayouts` awards elemental currency when elemental family appears in all 5 columns in `tests/unit/spinLogic.test.ts`
-- [ ] T011 [P] [US1] Unit test: Currency tab renders all 7 currencies (Copper, Silver, Gold, Air, Water, Earth, Fire) in `tests/unit/CurrencyDisplay.test.tsx`
+- [x] T009 [P] [US1] Unit test: purchasing each elemental icon deducts correct money and appends icon to reel (no currency awarded yet) in `tests/unit/catalog.test.ts`
+- [x] T010 [P] [US1] Unit test: `calculatePayouts` awards elemental currency when elemental family appears in all 5 columns in `tests/unit/spinLogic.test.ts`
+- [x] T011 [P] [US1] Unit test: Currency tab renders all 7 currencies (Copper, Silver, Gold, Air, Water, Earth, Fire) in `tests/unit/CurrencyDisplay.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Update `CurrencyDisplay` component in `src/components/CurrencyDisplay.tsx` to render Air, Water, Earth, Fire balances alongside existing currencies (depends on T007)
-- [ ] T013 [US1] Add four elemental market item cards to `src/components/Market.tsx` using existing `MarketItem` pattern (depends on T006)
+- [x] T012 [US1] Update `CurrencyDisplay` component in `src/components/CurrencyDisplay.tsx` to render Air, Water, Earth, Fire balances alongside existing currencies (depends on T007)
+- [x] T013 [US1] Add four elemental market item cards to `src/components/Market.tsx` using existing `MarketItem` pattern (depends on T006)
 
 **Checkpoint**: US1 fully functional — elemental icons purchasable, appear in reel, award currency on spin.
 
@@ -72,26 +72,26 @@
 
 ### Tests for User Story 2 ⚠️ Write FIRST — confirm they FAIL before implementing
 
-- [ ] T014 [P] [US2] Unit test: `SPIN` action stores columns in `magicGrid` and sets phase to `'spinning'` without computing payouts in `tests/unit/reducer.test.ts`
-- [ ] T015 [P] [US2] Unit test: `BEGIN_MAGIC_PHASE` transitions phase to `'magic'` and resets `magicCounters` to zero in `tests/unit/reducer.test.ts`
-- [ ] T016 [P] [US2] Unit test: `MAGIC_RESPIN` — deducts correct escalating Air cost, replaces target column with new icons; blocked when insufficient Air in `tests/unit/reducer.test.ts`
-- [ ] T017 [P] [US2] Unit test: `MAGIC_SWAP` — deducts correct escalating Water cost, exchanges two adjacent cells; blocked on non-adjacency and insufficient Water in `tests/unit/reducer.test.ts`
-- [ ] T018 [P] [US2] Unit test: `MAGIC_INCREASE_VALUE` — deducts N Fire and adds N to cell effective value on Nth use; works correctly for triple-apple (3→4) and dozen-apple (12→13) in `tests/unit/reducer.test.ts`
-- [ ] T019 [P] [US2] Unit test: `CLAIM` computes payouts from `magicGrid` with `valueOverride` applied, sets `magicGrid` to null, transitions to `'market'` in `tests/unit/reducer.test.ts`
-- [ ] T020 [US2] Integration test: full spin → `BEGIN_MAGIC_PHASE` → `MAGIC_RESPIN` → `CLAIM` flow produces correct currency awards in `tests/integration/magicPhase.test.ts`
+- [x] T014 [P] [US2] Unit test: `SPIN` action stores columns in `magicGrid` and sets phase to `'spinning'` without computing payouts in `tests/unit/reducer.test.ts`
+- [x] T015 [P] [US2] Unit test: `BEGIN_MAGIC_PHASE` transitions phase to `'magic'` and resets `magicCounters` to zero in `tests/unit/reducer.test.ts`
+- [x] T016 [P] [US2] Unit test: `MAGIC_RESPIN` — deducts correct escalating Air cost, replaces target column with new icons; blocked when insufficient Air in `tests/unit/reducer.test.ts`
+- [x] T017 [P] [US2] Unit test: `MAGIC_SWAP` — deducts correct escalating Water cost, exchanges two adjacent cells; blocked on non-adjacency and insufficient Water in `tests/unit/reducer.test.ts`
+- [x] T018 [P] [US2] Unit test: `MAGIC_INCREASE_VALUE` — deducts N Fire and adds N to cell effective value on Nth use; works correctly for triple-apple (3→4) and dozen-apple (12→13) in `tests/unit/reducer.test.ts`
+- [x] T019 [P] [US2] Unit test: `CLAIM` computes payouts from `magicGrid` with `valueOverride` applied, sets `magicGrid` to null, transitions to `'market'` in `tests/unit/reducer.test.ts`
+- [x] T020 [US2] Integration test: full spin → `BEGIN_MAGIC_PHASE` → `MAGIC_RESPIN` → `CLAIM` flow produces correct currency awards in `tests/integration/magicPhase.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Update `calculatePayouts` in `src/game/spinLogic.ts` to accept an optional `overrides: Map<string, number>` parameter (keyed by `icon.id`) and use override value when present
-- [ ] T022 [US2] Refactor `SPIN` action in `src/game/reducer.ts`: generate columns, populate `magicGrid`, set phase to `'spinning'`; move payout computation out (depends on T021)
-- [ ] T023 [US2] Add `BEGIN_MAGIC_PHASE` handler to `src/game/reducer.ts`: transition to `'magic'`, reset `magicCounters`, clear `lockedColumns` (depends on T022)
-- [ ] T024 [US2] Add `MAGIC_RESPIN` handler to `src/game/reducer.ts` with Air cost and escalating counter (depends on T023)
-- [ ] T025 [US2] Add `MAGIC_SWAP` handler to `src/game/reducer.ts` with Water cost, adjacency validation, and escalating counter (depends on T023)
-- [ ] T026 [US2] Add `MAGIC_INCREASE_VALUE` handler to `src/game/reducer.ts` with Fire cost (+N additive value, N escalates per use) (depends on T023)
-- [ ] T027 [US2] Add `CLAIM` handler to `src/game/reducer.ts`: project `magicGrid` → `Icon[][]` with overrides, call `calculatePayouts`, apply multiplier, update currencies, clear `magicGrid`, check phase (depends on T021, T026)
-- [ ] T028 [US2] Create `src/components/MagicPhasePanel.tsx`: displays Respin / Swap / Increase Value action buttons with current cost and available currency; disables controls when currency insufficient
-- [ ] T029 [US2] Update `src/components/SlotGrid.tsx` to render from `magicGrid` during magic phase and support cell/column selection for magic actions
-- [ ] T030 [US2] Add CLAIM button and Magic Phase wiring to `src/App.tsx`: dispatch `BEGIN_MAGIC_PHASE` from `onSpinDone`, render `MagicPhasePanel` during `'magic'` phase, dispatch `CLAIM` on button press (depends on T028, T029)
+- [x] T021 [US2] Update `calculatePayouts` in `src/game/spinLogic.ts` to accept an optional `overrides: Map<string, number>` parameter (keyed by `icon.id`) and use override value when present
+- [x] T022 [US2] Refactor `SPIN` action in `src/game/reducer.ts`: generate columns, populate `magicGrid`, set phase to `'spinning'`; move payout computation out (depends on T021)
+- [x] T023 [US2] Add `BEGIN_MAGIC_PHASE` handler to `src/game/reducer.ts`: transition to `'magic'`, reset `magicCounters`, clear `lockedColumns` (depends on T022)
+- [x] T024 [US2] Add `MAGIC_RESPIN` handler to `src/game/reducer.ts` with Air cost and escalating counter (depends on T023)
+- [x] T025 [US2] Add `MAGIC_SWAP` handler to `src/game/reducer.ts` with Water cost, adjacency validation, and escalating counter (depends on T023)
+- [x] T026 [US2] Add `MAGIC_INCREASE_VALUE` handler to `src/game/reducer.ts` with Fire cost (+N additive value, N escalates per use) (depends on T023)
+- [x] T027 [US2] Add `CLAIM` handler to `src/game/reducer.ts`: project `magicGrid` → `Icon[][]` with overrides, call `calculatePayouts`, apply multiplier, update currencies, clear `magicGrid`, check phase (depends on T021, T026)
+- [x] T028 [US2] Create `src/components/MagicPhasePanel.tsx`: displays Respin / Swap / Increase Value action buttons with current cost and available currency; disables controls when currency insufficient
+- [x] T029 [US2] Update `src/components/SlotGrid.tsx` to render from `magicGrid` during magic phase and support cell/column selection for magic actions
+- [x] T030 [US2] Add CLAIM button and Magic Phase wiring to `src/App.tsx`: dispatch `BEGIN_MAGIC_PHASE` from `onSpinDone`, render `MagicPhasePanel` during `'magic'` phase, dispatch `CLAIM` on button press (depends on T028, T029)
 
 **Checkpoint**: US2 fully functional — magic phase visible after every spin, all three actions work, CLAIM awards payouts.
 
@@ -105,16 +105,16 @@
 
 ### Tests for User Story 3 ⚠️ Write FIRST — confirm they FAIL before implementing
 
-- [ ] T031 [P] [US3] Unit test: `MAGIC_LOCK` — deducts correct escalating Earth cost, appends column index to `lockedColumns`; blocked when already 3 locked or already locked or insufficient Earth in `tests/unit/reducer.test.ts`
-- [ ] T032 [P] [US3] Unit test: `SPIN` preserves icons in `magicGrid` for locked column indices and randomises the rest in `tests/unit/reducer.test.ts`
-- [ ] T033 [P] [US3] Unit test: `BEGIN_MAGIC_PHASE` clears `lockedColumns` to `[]` in `tests/unit/reducer.test.ts`
+- [x] T031 [P] [US3] Unit test: `MAGIC_LOCK` — deducts correct escalating Earth cost, appends column index to `lockedColumns`; blocked when already 3 locked or already locked or insufficient Earth in `tests/unit/reducer.test.ts`
+- [x] T032 [P] [US3] Unit test: `SPIN` preserves icons in `magicGrid` for locked column indices and randomises the rest in `tests/unit/reducer.test.ts`
+- [x] T033 [P] [US3] Unit test: `BEGIN_MAGIC_PHASE` clears `lockedColumns` to `[]` in `tests/unit/reducer.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T034 [US3] Add `MAGIC_LOCK` handler to `src/game/reducer.ts`: validate max 3, deduct Earth (`lockedColumns.length + 1`), append index (depends on T023)
-- [ ] T035 [US3] Update `SPIN` handler in `src/game/reducer.ts` to skip randomisation for indices in `lockedColumns` and carry their `magicGrid` content forward (depends on T034)
-- [ ] T036 [US3] Update `src/components/SlotGrid.tsx` to show a lock badge on locked columns and suppress spin animation for them; receive `lockedColumns` prop
-- [ ] T037 [US3] Add Lock button to `src/components/MagicPhasePanel.tsx` with Earth cost display and max-3 guard (depends on T028)
+- [x] T034 [US3] Add `MAGIC_LOCK` handler to `src/game/reducer.ts`: validate max 3, deduct Earth (`lockedColumns.length + 1`), append index (depends on T023)
+- [x] T035 [US3] Update `SPIN` handler in `src/game/reducer.ts` to skip randomisation for indices in `lockedColumns` and carry their `magicGrid` content forward (depends on T034)
+- [x] T036 [US3] Update `src/components/SlotGrid.tsx` to show a lock badge on locked columns and suppress spin animation for them; receive `lockedColumns` prop
+- [x] T037 [US3] Add Lock button to `src/components/MagicPhasePanel.tsx` with Earth cost display and max-3 guard (depends on T028)
 
 **Checkpoint**: US3 fully functional — lock mechanic works across spins, visual indicator present.
 
@@ -128,14 +128,14 @@
 
 ### Tests for User Story 4 ⚠️ Write FIRST — confirm they FAIL before implementing
 
-- [ ] T038 [P] [US4] Unit test: `detectMasterOfElements` returns `true` iff all four elements appear ≥3 times; false when any element < 3; handles grids with >3 of any element in `tests/unit/masterOfElements.test.ts`
-- [ ] T039 [P] [US4] Unit test: `CLAIM` handler sets `state.masterOfElements = true` when condition met and leaves it `true` on subsequent spins in `tests/unit/reducer.test.ts`
+- [x] T038 [P] [US4] Unit test: `detectMasterOfElements` returns `true` iff all four elements appear ≥3 times; false when any element < 3; handles grids with >3 of any element in `tests/unit/masterOfElements.test.ts`
+- [x] T039 [P] [US4] Unit test: `CLAIM` handler sets `state.masterOfElements = true` when condition met and leaves it `true` on subsequent spins in `tests/unit/reducer.test.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T040 [US4] Create `src/game/masterOfElements.ts` with `detectMasterOfElements(grid: MagicCell[][]): boolean` (counts elemental icons across all cells)
-- [ ] T041 [US4] Update `CLAIM` handler in `src/game/reducer.ts` to call `detectMasterOfElements` and set `state.masterOfElements = true` if it returns `true` (depends on T040)
-- [ ] T042 [US4] Add "Master of Elements" notification display to `src/App.tsx` — shown as an overlay or banner when `state.masterOfElements` becomes `true`; dismissable, play continues
+- [x] T040 [US4] Create `src/game/masterOfElements.ts` with `detectMasterOfElements(grid: MagicCell[][]): boolean` (counts elemental icons across all cells)
+- [x] T041 [US4] Update `CLAIM` handler in `src/game/reducer.ts` to call `detectMasterOfElements` and set `state.masterOfElements = true` if it returns `true` (depends on T040)
+- [x] T042 [US4] Add "Master of Elements" notification display to `src/App.tsx` — shown as an overlay or banner when `state.masterOfElements` becomes `true`; dismissable, play continues
 
 **Checkpoint**: US4 fully functional — Master of Elements notification fires correctly and play continues.
 
@@ -149,12 +149,12 @@
 
 ### Tests for User Story 5 ⚠️ Write FIRST — confirm they FAIL before implementing
 
-- [ ] T043 [P] [US5] Unit test: updated `isNotableResult` — combined money cases: 99c earned on 10000 base → false; 201c earned on 1000 base → true; 0 combined money base → true for any gain in `tests/unit/notableResult.test.ts`
-- [ ] T044 [P] [US5] Unit test: elemental currency cases follow per-key logic (not combined): 3 Air gained on 10 Air → true (30%); 1 Air gained on 10 Air → false in `tests/unit/notableResult.test.ts`
+- [x] T043 [P] [US5] Unit test: updated `isNotableResult` — combined money cases: 99c earned on 10000 base → false; 201c earned on 1000 base → true; 0 combined money base → true for any gain in `tests/unit/notableResult.test.ts`
+- [x] T044 [P] [US5] Unit test: elemental currency cases follow per-key logic (not combined): 3 Air gained on 10 Air → true (30%); 1 Air gained on 10 Air → false in `tests/unit/notableResult.test.ts`
 
 ### Implementation for User Story 5
 
-- [ ] T045 [US5] Update `src/game/notableResult.ts`: group `copper`, `silver`, `gold` into combined money (`10000·gold + 100·silver + copper`); compare Δcombined / prevCombined > 0.20 (or prevCombined = 0 → true); all other currencies keep existing per-key logic; remove crowns special-case
+- [x] T045 [US5] Update `src/game/notableResult.ts`: group `copper`, `silver`, `gold` into combined money (`10000·gold + 100·silver + copper`); compare Δcombined / prevCombined > 0.20 (or prevCombined = 0 → true); all other currencies keep existing per-key logic; remove crowns special-case
 
 **Checkpoint**: US5 fully functional — modal fires only on meaningful gains.
 
@@ -162,15 +162,15 @@
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T046 [P] Verify `CurrencyDisplay.tsx` and `MagicPhasePanel.tsx` render correctly at 720×1280 px and ≥1280 px (no overflow, 48×48 px icon slots intact)
-- [ ] T047 [P] Audit all magic action buttons for WCAG AA contrast ratio (4.5:1 minimum) in `src/components/MagicPhasePanel.tsx`
-- [ ] T048 Remove any `console.log`, unused imports, and dead code introduced during implementation across `src/game/` and `src/components/`
-- [ ] T049 **[GATE 1] Typecheck** — run `npm run typecheck` (`tsc --noEmit`), fix all errors
-- [ ] T050 **[GATE 2] Lint** — run `npm run lint`, fix all ESLint errors
-- [ ] T051 **[GATE 3] Unit Tests** — run `npm run test:unit`, confirm all pass with ≥80% coverage on changed files
-- [ ] T052 **[GATE 4] Integration Tests** — run `npm run test:integration`, confirm all pass
-- [ ] T053 **[GATE 5] Build** — run `npm run build`, confirm no warnings treated as errors
-- [ ] T054 **[GATE 6] Bundle Size** — verify gzipped JS bundle ≤ 250 KB; record before/after delta
+- [x] T046 [P] Verify `CurrencyDisplay.tsx` and `MagicPhasePanel.tsx` render correctly at 720×1280 px and ≥1280 px (no overflow, 48×48 px icon slots intact)
+- [x] T047 [P] Audit all magic action buttons for WCAG AA contrast ratio (4.5:1 minimum) in `src/components/MagicPhasePanel.tsx`
+- [x] T048 Remove any `console.log`, unused imports, and dead code introduced during implementation across `src/game/` and `src/components/`
+- [x] T049 **[GATE 1] Typecheck** — run `npm run typecheck` (`tsc --noEmit`), fix all errors
+- [x] T050 **[GATE 2] Lint** — run `npm run lint`, fix all ESLint errors
+- [x] T051 **[GATE 3] Unit Tests** — run `npm run test:unit`, confirm all pass with ≥80% coverage on changed files
+- [x] T052 **[GATE 4] Integration Tests** — run `npm run test:integration`, confirm all pass
+- [x] T053 **[GATE 5] Build** — run `npm run build`, confirm no warnings treated as errors
+- [x] T054 **[GATE 6] Bundle Size** — verify gzipped JS bundle ≤ 250 KB; record before/after delta
 
 ---
 

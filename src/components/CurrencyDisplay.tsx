@@ -12,6 +12,10 @@ const COLOR: Record<string, string> = {
   silver: 'text-slate-400',
   gold: 'text-yellow-400',
   crowns: 'text-purple-400',
+  air: 'text-sky-300',
+  water: 'text-blue-400',
+  earth: 'text-green-600',
+  fire: 'text-red-500',
 }
 
 export function CurrencyDisplay({ currencies, spinCount }: Props) {

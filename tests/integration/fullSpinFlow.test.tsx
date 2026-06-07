@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import App from '@/App'
-import type { SpinResult } from '@/game/types'
 
 vi.mock('@/game/persistence', () => ({
   saveState: vi.fn(),
@@ -9,28 +8,32 @@ vi.mock('@/game/persistence', () => ({
   clearState: vi.fn(),
 }))
 
-const defaultSpin: SpinResult = {
-  columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
-  payouts: [],
-}
-const mockComputeSpin = vi.fn(() => defaultSpin)
+const blankColumn = [
+  { id: 'c1', definitionId: 'blank' },
+  { id: 'c2', definitionId: 'blank' },
+  { id: 'c3', definitionId: 'blank' },
+]
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockDrawColumn = vi.fn(() => blankColumn) as any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockCalculatePayouts = vi.fn(() => [] as { family: string; amount: number; currency: string }[]) as any
 
 vi.mock('@/game/spinLogic', () => ({
-  get computeSpin() {
-    return mockComputeSpin
-  },
-  calculatePayouts: vi.fn(),
+  get drawColumn() { return mockDrawColumn },
+  get calculatePayouts() { return mockCalculatePayouts },
 }))
+
+function advancePastAnimation() {
+  act(() => { vi.advanceTimersByTime(5000) })
+}
 
 describe('full spin flow integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
     localStorage.clear()
-    mockComputeSpin.mockReturnValue({
-      columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
-      payouts: [],
-    })
+    mockDrawColumn.mockReturnValue(blankColumn)
+    mockCalculatePayouts.mockReturnValue([])
   })
 
   afterEach(() => {
@@ -43,50 +46,54 @@ describe('full spin flow integration', () => {
     expect(screen.getByText(/food/i)).toBeInTheDocument()
   })
 
-  it('food decrements after clicking SPIN and animation completes', () => {
+  it('food decrements after clicking SPIN (deducted at spin time)', () => {
     render(<App />)
     expect(screen.getByText('100')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
-
-    // Advance timers past the last column stop time (1500 + 4 * 600 = 3900ms)
-    act(() => {
-      vi.advanceTimersByTime(5000)
-    })
-
+    // Food is deducted synchronously at SPIN action dispatch
+    // But displayedCurrencies is frozen during spinning; advance past animation first
+    advancePastAnimation()
+    // Now in magic phase; click CLAIM to complete round
+    fireEvent.click(screen.getByRole('button', { name: 'Claim spin result' }))
     expect(screen.getByText('99')).toBeInTheDocument()
+  })
+
+  it('shows CLAIM button after spin animation completes', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
+    advancePastAnimation()
+    expect(screen.getByRole('button', { name: 'Claim spin result' })).toBeInTheDocument()
   })
 
   it('shows game over screen when food reaches 0', () => {
     render(<App />)
-    const spinBtn = screen.getByRole('button', { name: 'Spin the reels' })
     for (let i = 0; i < 100; i++) {
-      if ((spinBtn as HTMLButtonElement).disabled) break
+      const spinBtn = screen.queryByRole('button', { name: 'Spin the reels' })
+      if (!spinBtn || (spinBtn as HTMLButtonElement).disabled) break
       fireEvent.click(spinBtn)
-      act(() => { vi.advanceTimersByTime(5000) })
+      advancePastAnimation()
+      const claimBtn = screen.queryByRole('button', { name: 'Claim spin result' })
+      if (claimBtn) fireEvent.click(claimBtn)
     }
     expect(screen.getAllByRole('button', { name: /reset/i }).length).toBeGreaterThan(0)
   })
 
-  it('win modal appears when crowns reach 100', () => {
-    const winSpin: SpinResult = {
-      columns: Array(5).fill([{ id: 'w1', definitionId: 'crown' }]),
-      payouts: [{ family: 'crown', amount: 100, currency: 'crowns' }],
-    }
-    mockComputeSpin.mockReturnValueOnce(winSpin)
+  it('win modal appears when crowns reach 100 after CLAIM', () => {
+    mockCalculatePayouts.mockReturnValue([{ family: 'crown', amount: 100, currency: 'crowns' }])
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
+    advancePastAnimation()
+    fireEvent.click(screen.getByRole('button', { name: 'Claim spin result' }))
     expect(screen.getByText(/you win/i)).toBeInTheDocument()
   })
 
   it('win modal can be dismissed to continue playing', () => {
-    const winSpin: SpinResult = {
-      columns: Array(5).fill([{ id: 'w1', definitionId: 'crown' }]),
-      payouts: [{ family: 'crown', amount: 100, currency: 'crowns' }],
-    }
-    mockComputeSpin.mockReturnValueOnce(winSpin)
+    mockCalculatePayouts.mockReturnValue([{ family: 'crown', amount: 100, currency: 'crowns' }])
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
+    advancePastAnimation()
+    fireEvent.click(screen.getByRole('button', { name: 'Claim spin result' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Continue Playing' }))
     expect(screen.queryByText(/you win/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Spin the reels' })).toBeInTheDocument()
   })

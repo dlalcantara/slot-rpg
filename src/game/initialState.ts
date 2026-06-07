@@ -15,13 +15,13 @@ function buildInitialCurrencies(): Record<string, number> {
 
 export function makeInitialState(): GameState {
   return {
-    version: 3,
+    version: 4,
     reel: {
       icons: [
         { id: stableId('blank'), definitionId: 'blank' },
-        { id: stableId('blank'), definitionId: 'blank' },
         { id: stableId('apple'), definitionId: 'apple' },
         { id: stableId('copper'), definitionId: 'copper' },
+        { id: stableId('air'), definitionId: 'air' },
       ],
     },
     currencies: buildInitialCurrencies(),
@@ -30,6 +30,11 @@ export function makeInitialState(): GameState {
     spinCount: 0,
     settings: DEFAULT_SETTINGS,
     gameLog: [],
+    magicGrid: null,
+    lockedColumns: [],
+    magicCounters: { respin: 0, swap: 0, increaseValue: 0 },
+    masterOfElements: false,
+    pendingMultiplier: 1,
   }
 }
 

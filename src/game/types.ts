@@ -1,4 +1,4 @@
-export type CurrencyKey = 'food' | 'copper' | 'silver' | 'gold' | 'crowns'
+export type CurrencyKey = 'food' | 'copper' | 'silver' | 'gold' | 'crowns' | 'air' | 'water' | 'earth' | 'fire'
 
 export type IconEffect =
   | { type: 'add_currency'; currency: CurrencyKey; valuePerColumn: number }
@@ -64,7 +64,7 @@ export interface SpinResult {
   payouts: Payout[]
 }
 
-export type GamePhase = 'market' | 'spinning' | 'gameover' | 'win'
+export type GamePhase = 'market' | 'spinning' | 'magic' | 'gameover' | 'win'
 
 export type SpinMultiplier = 1 | 10 | 100
 
@@ -87,6 +87,17 @@ export interface SpinLogEntry {
   timestamp: number
 }
 
+export interface MagicCell {
+  icon: Icon
+  valueOverride: number | null
+}
+
+export interface MagicCounters {
+  respin: number
+  swap: number
+  increaseValue: number
+}
+
 export interface GameState {
   version: number
   reel: Reel
@@ -96,4 +107,23 @@ export interface GameState {
   spinCount: number
   settings: PlayerSettings
   gameLog: SpinLogEntry[]
+  magicGrid: MagicCell[][] | null
+  lockedColumns: number[]
+  magicCounters: MagicCounters
+  masterOfElements: boolean
+  pendingMultiplier: SpinMultiplier
 }
+
+export type GameAction =
+  | { type: 'SPIN'; multiplier: SpinMultiplier }
+  | { type: 'BEGIN_MAGIC_PHASE' }
+  | { type: 'MAGIC_RESPIN'; colIdx: number }
+  | { type: 'MAGIC_SWAP'; fromCol: number; fromRow: number; toCol: number; toRow: number }
+  | { type: 'MAGIC_LOCK'; colIdx: number }
+  | { type: 'MAGIC_INCREASE_VALUE'; colIdx: number; rowIdx: number }
+  | { type: 'CLAIM' }
+  | { type: 'BUY_ICON'; iconDefinitionId: string }
+  | { type: 'HARD_RESET' }
+  | { type: 'CONTINUE_AFTER_WIN' }
+  | { type: 'RESTORE_STATE'; savedState: GameState }
+  | { type: 'UPDATE_SETTINGS'; patch: Partial<PlayerSettings> }

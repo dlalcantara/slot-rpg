@@ -46,6 +46,42 @@ export const CURRENCY_REGISTRY: Record<string, CurrencyDefinition> = {
     winCondition: { threshold: 100 },
     lossCondition: null,
   },
+  air: {
+    key: 'air',
+    label: 'Air',
+    startingAmount: 0,
+    autoConvertTo: null,
+    convertibleFrom: null,
+    winCondition: null,
+    lossCondition: null,
+  },
+  water: {
+    key: 'water',
+    label: 'Water',
+    startingAmount: 0,
+    autoConvertTo: null,
+    convertibleFrom: null,
+    winCondition: null,
+    lossCondition: null,
+  },
+  earth: {
+    key: 'earth',
+    label: 'Earth',
+    startingAmount: 0,
+    autoConvertTo: null,
+    convertibleFrom: null,
+    winCondition: null,
+    lossCondition: null,
+  },
+  fire: {
+    key: 'fire',
+    label: 'Fire',
+    startingAmount: 0,
+    autoConvertTo: null,
+    convertibleFrom: null,
+    winCondition: null,
+    lossCondition: null,
+  },
 }
 
-export const CURRENCY_ORDER = ['food', 'gold', 'silver', 'copper', 'crowns']
+export const CURRENCY_ORDER = ['food', 'gold', 'silver', 'copper', 'crowns', 'air', 'water', 'earth', 'fire']

@@ -15,11 +15,12 @@ vi.mock('@/game/persistence', () => ({
 }))
 
 vi.mock('@/game/spinLogic', () => ({
-  computeSpin: vi.fn(() => ({
-    columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
-    payouts: [],
-  })),
-  calculatePayouts: vi.fn(),
+  drawColumn: vi.fn(() => [
+    { id: 'c1', definitionId: 'blank' },
+    { id: 'c2', definitionId: 'blank' },
+    { id: 'c3', definitionId: 'blank' },
+  ]),
+  calculatePayouts: vi.fn(() => []),
 }))
 
 describe('market flow integration', () => {
@@ -44,7 +45,7 @@ describe('market flow integration', () => {
   it('successful purchase deducts copper and increases balance display', () => {
     const seededState: GameState = {
       ...makeInitialState(),
-      currencies: { food: 100, copper: 5, silver: 0, gold: 0, crowns: 0 },
+      currencies: { food: 100, copper: 5, silver: 0, gold: 0, crowns: 0, air: 0, water: 0, earth: 0, fire: 0 },
     }
     mockLoadState.mockReturnValue(seededState)
 

@@ -15,11 +15,12 @@ vi.mock('@/game/persistence', () => ({
 }))
 
 vi.mock('@/game/spinLogic', () => ({
-  computeSpin: vi.fn(() => ({
-    columns: Array(5).fill([{ id: 'c1', definitionId: 'blank' }]),
-    payouts: [],
-  })),
-  calculatePayouts: vi.fn(),
+  drawColumn: vi.fn(() => [
+    { id: 'c1', definitionId: 'blank' },
+    { id: 'c2', definitionId: 'blank' },
+    { id: 'c3', definitionId: 'blank' },
+  ]),
+  calculatePayouts: vi.fn(() => []),
 }))
 
 describe('persistence flow integration', () => {
@@ -48,12 +49,9 @@ describe('persistence flow integration', () => {
   it('hard reset returns game to initial state', () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
-
-    // Advance timers so all reel columns finish animating → onSpinDone fires → currency bar updates
-    act(() => {
-      vi.advanceTimersByTime(5000)
-    })
-
+    act(() => { vi.advanceTimersByTime(5000) })
+    // Now in magic phase; claim to complete the round and update currency display
+    fireEvent.click(screen.getByRole('button', { name: 'Claim spin result' }))
     expect(screen.getByText('99')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /hard reset/i }))
