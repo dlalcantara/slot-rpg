@@ -158,6 +158,54 @@ describe('ReelColumn respin animation (US3)', () => {
   })
 })
 
+// ─── US4 (v0.6): respin animation does not grow column height ────────────────
+
+describe('ReelColumn respin animation height (US4 v0.6)', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  it('during respin animation the displayed icon count equals icons.length (3), not reelIcons.length', () => {
+    // reelIcons has 8 icons to simulate a larger reel; column should only show 3
+    const largeReelIcons: Icon[] = Array.from({ length: 8 }, (_, i) => ({
+      id: `r${i}`,
+      definitionId: 'apple',
+    }))
+
+    const { rerender } = renderColumn({
+      icons: appleIcons,
+      reelIcons: largeReelIcons,
+      spinning: false,
+      animate: true,
+      respinToken: 0,
+    })
+
+    // Trigger respin by incrementing respinToken
+    rerender(
+      <ReelColumn
+        icons={appleIcons}
+        valueOverrides={emptyOverrides}
+        reelIcons={largeReelIcons}
+        spinning={false}
+        animate={true}
+        colIndex={0}
+        locked={false}
+        isMagicPhase={false}
+        respinToken={1}
+        isTargetingMode={false}
+        onCellClick={vi.fn()}
+        onColumnClick={vi.fn()}
+      />
+    )
+
+    // Mid-animation: advance timer part-way so setInterval fires
+    act(() => { vi.advanceTimersByTime(400) })
+
+    // Should display exactly 3 icons (icons.length), not 8 (reelIcons.length)
+    const listItems = document.querySelectorAll('[role="listitem"]')
+    expect(listItems.length).toBe(3)
+  })
+})
+
 // ─── US4: locked column indicator ───────────────────────────────────────────
 
 describe('ReelColumn locked indicator (US4)', () => {

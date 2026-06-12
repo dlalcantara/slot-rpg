@@ -106,7 +106,7 @@ export function ReelColumn({
     const pool = reelIcons.length > 0 ? reelIcons : icons
     setAnimating(true)
     respinIntervalRef.current = setInterval(() => {
-      setDisplayIcons(pool.map(() => pool[Math.floor(Math.random() * pool.length)]))
+      setDisplayIcons(icons.map(() => pool[Math.floor(Math.random() * pool.length)]))
     }, 200)
 
     respinStopRef.current = setTimeout(() => {
@@ -129,17 +129,6 @@ export function ReelColumn({
       aria-label={`Reel column ${colIndex + 1}`}
       onClick={onColumnClick}
     >
-      {/* US4: clear, persistent locked indicator */}
-      {locked && (
-        <div
-          role="status"
-          aria-label="locked"
-          className="flex items-center justify-center gap-1 rounded-md bg-amber-900 border-2 border-amber-400 px-2 py-0.5"
-        >
-          <span className="text-amber-300 text-xs font-bold">🔒 Locked</span>
-        </div>
-      )}
-
       {/* US5: column click target affordance when targeting mode is active */}
       {isTargetingMode && (
         <button
@@ -173,6 +162,19 @@ export function ReelColumn({
           </div>
         )
       })}
+
+      {/* Fixed-height lock indicator slot — always present to keep column heights equal */}
+      <div className="h-6 flex items-center justify-center">
+        {locked && (
+          <span
+            role="status"
+            aria-label="locked"
+            className="text-xs text-amber-300 font-bold"
+          >
+            🔒
+          </span>
+        )}
+      </div>
     </div>
   )
 }

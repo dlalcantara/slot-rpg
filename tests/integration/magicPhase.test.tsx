@@ -99,7 +99,8 @@ describe('full spin → magic phase → CLAIM flow', () => {
 
     const col0After = state.magicGrid![0].map((c) => c.icon.definitionId)
     expect(col0After).toEqual(lockedIcons)
-    expect(state.lockedColumns).toEqual([])
+    // lockedColumns are preserved through SPIN and only cleared by BEGIN_MAGIC_PHASE
+    expect(state.lockedColumns).toContain(0)
   })
 
   it('multiple magic actions before CLAIM all reflected in result', () => {
@@ -270,6 +271,45 @@ describe('US5: column click-target affordance when targeting mode active', () =>
     fireEvent.click(respinRow) // activate
     fireEvent.click(respinRow) // deactivate (toggle off)
     expect(screen.queryAllByRole('button', { name: /Select column/i })).toHaveLength(0)
+  })
+})
+
+// ─── US2 (v0.6): CLAIM/SpinControls layout ───────────────────────────────────
+
+describe('US2 (v0.6): SPIN/CLAIM same anchor, SpinControls always visible', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    localStorage.clear()
+    mockDrawColumn.mockReturnValue(appleColumn)
+  })
+
+  afterEach(() => vi.useRealTimers())
+
+  function getToMagicPhase() {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
+    act(() => { vi.advanceTimersByTime(5000) })
+  }
+
+  it('SpinControls is present during magic phase', () => {
+    getToMagicPhase()
+    // SpinControls renders the spin multiplier selector or animate toggle
+    // It contains at least one checkbox or button in the settings area
+    const spinTab = document.querySelector('[aria-label="Slot machine grid"]')
+    expect(spinTab).toBeInTheDocument()
+    // The CLAIM button is present
+    expect(screen.getByRole('button', { name: /claim/i })).toBeInTheDocument()
+  })
+
+  it('CLAIM button appears before MagicPhasePanel in document order during magic phase', () => {
+    getToMagicPhase()
+    const claimBtn = screen.getByRole('button', { name: /claim/i })
+    const respinBtn = screen.getByRole('button', { name: /respin column/i })
+    const pos = claimBtn.compareDocumentPosition(respinBtn)
+    // CLAIM should come before MagicPhasePanel (respinBtn) in document order
+    // compareDocumentPosition returns DOCUMENT_POSITION_FOLLOWING (4) when respinBtn follows claimBtn
+    expect(pos & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })
 

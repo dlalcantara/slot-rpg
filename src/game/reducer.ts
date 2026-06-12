@@ -46,29 +46,38 @@ function checkPhase(currencies: Currencies): GameState['phase'] {
   return 'market'
 }
 
+function ensureLiquidity(
+  currencies: Currencies,
+  currency: string,
+  amount: number,
+): Currencies | null {
+  if ((currencies[currency] ?? 0) >= amount) return currencies
+
+  const def = CURRENCY_REGISTRY[currency]
+  if (!def?.convertibleFrom) return null
+
+  const { currency: src, rate } = def.convertibleFrom
+  const unitsNeeded = Math.ceil((amount - (currencies[currency] ?? 0)) / rate)
+
+  const funded = ensureLiquidity(currencies, src, unitsNeeded)
+  if (!funded) return null
+
+  return {
+    ...funded,
+    [src]: funded[src] - unitsNeeded,
+    [currency]: (funded[currency] ?? 0) + unitsNeeded * rate,
+  }
+}
+
 function tryBuyIcon(state: GameState, iconDefinitionId: string): GameState {
   const def = ICON_CATALOG[iconDefinitionId]
   if (!def || !def.cost) return state
 
   const { currency: costCurrency, amount: costAmount } = def.cost
-  const currencies: Currencies = { ...state.currencies }
+  const funded = ensureLiquidity({ ...state.currencies }, costCurrency, costAmount)
+  if (!funded) return state
 
-  if (currencies[costCurrency] >= costAmount) {
-    currencies[costCurrency] -= costAmount
-  } else {
-    const shortfall = costAmount - (currencies[costCurrency] ?? 0)
-    const currencyDef = CURRENCY_REGISTRY[costCurrency]
-    if (!currencyDef?.convertibleFrom) return state
-
-    const { currency: sourceCurrency, rate } = currencyDef.convertibleFrom
-    const unitsNeeded = Math.ceil(shortfall / rate)
-    if ((currencies[sourceCurrency] ?? 0) < unitsNeeded) return state
-
-    currencies[sourceCurrency] -= unitsNeeded
-    currencies[costCurrency] = (currencies[costCurrency] ?? 0) + unitsNeeded * rate
-    currencies[costCurrency] -= costAmount
-  }
-
+  const currencies = { ...funded, [costCurrency]: funded[costCurrency] - costAmount }
   const newIcon = { id: crypto.randomUUID(), definitionId: iconDefinitionId }
   const newState: GameState = {
     ...state,
@@ -80,7 +89,7 @@ function tryBuyIcon(state: GameState, iconDefinitionId: string): GameState {
 }
 
 function iconsToMagicCells(icons: Icon[]): MagicCell[] {
-  return icons.map((icon) => ({ icon, valueOverride: null }))
+  return icons.map((icon) => ({ icon: { ...icon, id: crypto.randomUUID() }, valueOverride: null }))
 }
 
 function buildOverridesMap(grid: MagicCell[][]): Map<string, number> {
@@ -114,7 +123,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         if (state.lockedColumns.includes(i) && state.lastSpinResult) {
           newColumns.push(state.lastSpinResult.columns[i])
         } else {
-          newColumns.push(drawColumn(state.reel))
+          newColumns.push(drawColumn(state.reel, state.disabledIconIds))
         }
       }
 
@@ -125,7 +134,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         currencies,
         phase: 'spinning',
         magicGrid,
-        lockedColumns: [],
         pendingMultiplier: multiplier,
         spinCount: state.spinCount + 1,
       }
@@ -151,7 +159,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const cost = state.magicCounters.respin + 1
       if ((state.currencies.air ?? 0) < cost) return state
 
-      const newColumn = iconsToMagicCells(drawColumn(state.reel))
+      const newColumn = iconsToMagicCells(drawColumn(state.reel, state.disabledIconIds))
       const newGrid = state.magicGrid.map((col, i) => i === colIdx ? newColumn : col)
 
       const newState: GameState = {
@@ -218,7 +226,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newGrid = state.magicGrid.map((col, ci) =>
         col.map((c, ri) =>
           ci === colIdx && ri === rowIdx
-            ? { ...c, valueOverride: currentValue + cost }
+            ? { ...c, valueOverride: currentValue + 1 }
             : c
         )
       )
@@ -307,6 +315,28 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newState: GameState = {
         ...state,
         currencies: { ...state.currencies, [currency]: Math.floor(amount) },
+      }
+      saveState(newState)
+      return newState
+    }
+
+    case 'TOGGLE_ICON': {
+      if (state.phase !== 'market') return state
+      const { iconId } = action
+      const isDisabled = state.disabledIconIds.includes(iconId)
+      if (isDisabled) {
+        const newState: GameState = {
+          ...state,
+          disabledIconIds: state.disabledIconIds.filter((id) => id !== iconId),
+        }
+        saveState(newState)
+        return newState
+      }
+      const enabledCount = state.reel.icons.length - state.disabledIconIds.length
+      if (enabledCount <= 12) return state
+      const newState: GameState = {
+        ...state,
+        disabledIconIds: [...state.disabledIconIds, iconId],
       }
       saveState(newState)
       return newState

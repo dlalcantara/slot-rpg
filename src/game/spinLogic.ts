@@ -19,8 +19,10 @@ function extractColumn(icons: Icon[], startOffset: number): Icon[] {
   ]
 }
 
-export function drawColumn(reel: Reel): Icon[] {
-  const shuffled = shuffle(reel.icons)
+export function drawColumn(reel: Reel, disabledIconIds: string[] = []): Icon[] {
+  const eligible = reel.icons.filter((icon) => !disabledIconIds.includes(icon.id))
+  const pool = eligible.length > 0 ? eligible : reel.icons
+  const shuffled = shuffle(pool)
   const offset = Math.floor(Math.random() * shuffled.length)
   return extractColumn(shuffled, offset)
 }
@@ -55,10 +57,10 @@ export function calculatePayouts(columns: Icon[][], overrides?: Map<string, numb
   return payouts
 }
 
-export function computeSpin(reel: Reel): SpinResult {
+export function computeSpin(reel: Reel, disabledIconIds: string[] = []): SpinResult {
   const columns: Icon[][] = []
   for (let i = 0; i < 5; i++) {
-    columns.push(drawColumn(reel))
+    columns.push(drawColumn(reel, disabledIconIds))
   }
   const payouts = calculatePayouts(columns)
   return { columns, payouts }

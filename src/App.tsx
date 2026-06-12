@@ -163,7 +163,11 @@ export default function App() {
         </div>
 
         <div className={activeTab === 'reel' ? '' : 'hidden'}>
-          <ReelView reel={state.reel} />
+          <ReelView
+            reel={state.reel}
+            disabledIconIds={state.disabledIconIds}
+            onToggleIcon={(iconId) => dispatch({ type: 'TOGGLE_ICON', iconId })}
+          />
         </div>
 
         <div className={activeTab === 'spin' ? '' : 'hidden'}>
@@ -190,30 +194,29 @@ export default function App() {
             }}
           />
           <div className="mt-3 space-y-2">
+            <SpinControls
+              settings={state.settings}
+              spinning={spinning}
+              onSettingsChange={(patch) => dispatch({ type: 'UPDATE_SETTINGS', patch })}
+            />
             {isMagicPhase ? (
-              <MagicPhasePanel
-                currencies={state.currencies}
-                magicCounters={state.magicCounters}
-                lockedColumns={state.lockedColumns}
-                magicMode={magicMode}
-                swapFrom={swapFrom}
-                onSelectMode={setMagicMode}
-              />
-            ) : (
-              <SpinControls
-                settings={state.settings}
-                spinning={spinning}
-                onSettingsChange={(patch) => dispatch({ type: 'UPDATE_SETTINGS', patch })}
-              />
-            )}
-            {isMagicPhase ? (
-              <button
-                onClick={handleClaim}
-                className="w-full py-4 text-2xl font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all"
-                aria-label="Claim spin result"
-              >
-                ✨ CLAIM
-              </button>
+              <>
+                <button
+                  onClick={handleClaim}
+                  className="w-full py-4 text-2xl font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all"
+                  aria-label="Claim spin result"
+                >
+                  ✨ CLAIM
+                </button>
+                <MagicPhasePanel
+                  currencies={state.currencies}
+                  magicCounters={state.magicCounters}
+                  lockedColumns={state.lockedColumns}
+                  magicMode={magicMode}
+                  swapFrom={swapFrom}
+                  onSelectMode={setMagicMode}
+                />
+              </>
             ) : (
               <SpinButton
                 phase={state.phase}

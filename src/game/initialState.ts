@@ -15,7 +15,7 @@ function buildInitialCurrencies(): Record<string, number> {
 
 export function makeInitialState(): GameState {
   return {
-    version: 4,
+    version: 5,
     reel: {
       icons: [
         { id: stableId('air'), definitionId: 'air' },
@@ -35,6 +35,7 @@ export function makeInitialState(): GameState {
     magicCounters: { respin: 0, swap: 0, increaseValue: 0 },
     masterOfElements: false,
     pendingMultiplier: 1,
+    disabledIconIds: [],
   }
 }
 

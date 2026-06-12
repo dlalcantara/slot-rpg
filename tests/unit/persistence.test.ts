@@ -14,7 +14,7 @@ describe('persistence', () => {
     const raw = localStorage.getItem('slot-rpg-state')
     expect(raw).not.toBeNull()
     const parsed = JSON.parse(raw!)
-    expect(parsed.version).toBe(4)
+    expect(parsed.version).toBe(5)
     expect(parsed.currencies.food).toBe(100)
   })
 
@@ -23,7 +23,7 @@ describe('persistence', () => {
     saveState(state)
     const loaded = loadState()
     expect(loaded).not.toBeNull()
-    expect(loaded!.version).toBe(4)
+    expect(loaded!.version).toBe(5)
     expect(loaded!.currencies.food).toBe(100)
   })
 
@@ -68,6 +68,18 @@ describe('persistence', () => {
     const loaded = loadState()
     expect(loaded!.gameLog).toHaveLength(1)
     expect(loaded!.gameLog[0].spinNumber).toBe(1)
+  })
+
+  it('migrates v4 save to v5 by adding disabledIconIds: []', () => {
+    const v4State = { ...makeInitialState(), version: 4 }
+    // Remove disabledIconIds to simulate a real v4 save
+    const { disabledIconIds: _stripped, ...v4StateWithout } = v4State
+    void _stripped
+    localStorage.setItem('slot-rpg-state', JSON.stringify(v4StateWithout))
+    const loaded = loadState()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.version).toBe(5)
+    expect(loaded!.disabledIconIds).toEqual([])
   })
 
   it('discards state with version < 4 (no migration)', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeSpin, calculatePayouts } from '@/game/spinLogic'
+import { computeSpin, calculatePayouts, drawColumn } from '@/game/spinLogic'
 import type { Icon, Reel } from '@/game/types'
 
 function makeReel(definitionIds: string[]): Reel {
@@ -54,6 +54,52 @@ describe('computeSpin', () => {
     const reel = makeReel(['blank', 'blank', 'blank', 'blank', 'blank'])
     const result = computeSpin(reel)
     expect(result.payouts).toHaveLength(0)
+  })
+})
+
+// ─── drawColumn with disabledIconIds (US1) ────────────────────────────────────
+
+describe('drawColumn with disabledIconIds', () => {
+  it('excludes disabled icon ids from drawn results', () => {
+    const reel: Reel = {
+      icons: [
+        { id: 'apple-1', definitionId: 'apple' },
+        { id: 'apple-2', definitionId: 'apple' },
+        { id: 'copper-1', definitionId: 'copper' },
+        { id: 'copper-2', definitionId: 'copper' },
+        { id: 'copper-3', definitionId: 'copper' },
+        { id: 'copper-4', definitionId: 'copper' },
+      ],
+    }
+    const disabledIconIds = ['apple-1', 'apple-2']
+
+    // Run many times to avoid false positives from randomness
+    for (let i = 0; i < 50; i++) {
+      const column = drawColumn(reel, disabledIconIds)
+      column.forEach((icon) => {
+        expect(disabledIconIds).not.toContain(icon.id)
+      })
+    }
+  })
+
+  it('falls back to full reel when all icons are disabled (safety fallback)', () => {
+    const reel: Reel = {
+      icons: [
+        { id: 'apple-1', definitionId: 'apple' },
+        { id: 'apple-2', definitionId: 'apple' },
+        { id: 'apple-3', definitionId: 'apple' },
+      ],
+    }
+    const disabledIconIds = ['apple-1', 'apple-2', 'apple-3']
+    const column = drawColumn(reel, disabledIconIds)
+    expect(column).toHaveLength(3)
+    column.forEach((icon) => expect(icon.definitionId).toBe('apple'))
+  })
+
+  it('uses full pool when disabledIconIds is empty', () => {
+    const reel = makeReel(['apple', 'copper', 'blank', 'apple', 'copper'])
+    const column = drawColumn(reel, [])
+    expect(column).toHaveLength(3)
   })
 })
 

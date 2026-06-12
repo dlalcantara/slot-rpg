@@ -106,10 +106,10 @@ describe('SPIN action', () => {
     expect(next.magicGrid![2][0].icon.definitionId).toBe('fire')
   })
 
-  it('clears lockedColumns after SPIN', () => {
+  it('preserves lockedColumns during spinning phase (not cleared by SPIN)', () => {
     const state: GameState = { ...stateWithCurrencies({ food: 10 }), lockedColumns: [1, 3] }
     const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    expect(next.lockedColumns).toEqual([])
+    expect(next.lockedColumns).toEqual([1, 3])
   })
 })
 
@@ -294,13 +294,13 @@ describe('MAGIC_INCREASE_VALUE action', () => {
     expect(next.magicGrid![0][0].valueOverride).toBe(2) // 1 + 1
   })
 
-  it('adds 2 to value on second use (base=1 → 3)', () => {
+  it('adds exactly 1 to value on second use (base=1 → 2, not 3)', () => {
     const state = magicState({
       currencies: { ...makeInitialState().currencies, fire: 5 },
       magicCounters: { respin: 0, swap: 0, increaseValue: 1 },
     })
     const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
-    expect(next.magicGrid![0][0].valueOverride).toBe(3) // 1 + 2
+    expect(next.magicGrid![0][0].valueOverride).toBe(2) // 1 + 1 (not 1 + cost)
   })
 
   it('handles triple-apple (base=3): first use → 4', () => {
@@ -331,7 +331,7 @@ describe('MAGIC_INCREASE_VALUE action', () => {
     expect(next.magicGrid![0][0].valueOverride).toBe(13) // 12 + 1
   })
 
-  it('stacks on existing valueOverride', () => {
+  it('stacks on existing valueOverride by exactly +1 regardless of cost', () => {
     const grid: MagicCell[][] = Array(5).fill(null).map((_, ci) => [
       { icon: { id: `c${ci}r0`, definitionId: 'apple' }, valueOverride: 3 },
       { icon: { id: `c${ci}r1`, definitionId: 'apple' }, valueOverride: null },
@@ -340,10 +340,10 @@ describe('MAGIC_INCREASE_VALUE action', () => {
     const state = magicState({
       currencies: { ...makeInitialState().currencies, fire: 5 },
       magicGrid: grid,
-      magicCounters: { respin: 0, swap: 0, increaseValue: 2 }, // next cost = 3
+      magicCounters: { respin: 0, swap: 0, increaseValue: 2 }, // next cost = 3 but increment is always +1
     })
     const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
-    expect(next.magicGrid![0][0].valueOverride).toBe(6) // 3 + 3
+    expect(next.magicGrid![0][0].valueOverride).toBe(4) // 3 + 1 (not 3 + cost)
   })
 
   it('is a no-op when Fire insufficient', () => {
@@ -522,6 +522,97 @@ describe('UPDATE_SETTINGS action', () => {
     const next = gameReducer(state, { type: 'UPDATE_SETTINGS', patch: { autoConvert: false } })
     expect(next.settings.autoConvert).toBe(false)
     expect(next.settings.animate).toBe(true)
+  })
+})
+
+// ─── tryBuyIcon multi-level currency conversion (US5) ─────────────────────────
+
+describe('BUY_ICON multi-level currency conversion (US5)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('succeeds with 0 copper but sufficient silver (one-level conversion)', () => {
+    const state = stateWithCurrencies({ copper: 0, silver: 1, gold: 0 })
+    const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    expect(next.reel.icons.length).toBe(state.reel.icons.length + 1)
+    expect(next.currencies.silver).toBe(0)
+    expect(next.currencies.copper).toBeGreaterThanOrEqual(99)
+  })
+
+  it('succeeds with 0 copper, 0 silver, but sufficient gold (two-level chain)', () => {
+    const state = stateWithCurrencies({ copper: 0, silver: 0, gold: 1 })
+    const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    expect(next.reel.icons.length).toBe(state.reel.icons.length + 1)
+  })
+
+  it('fails when 0 copper, 0 silver, 0 gold', () => {
+    const state = stateWithCurrencies({ copper: 0, silver: 0, gold: 0 })
+    const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    expect(next.reel.icons.length).toBe(state.reel.icons.length)
+    expect(next).toBe(state)
+  })
+
+  it('succeeds with 0 silver but sufficient gold for a silver-cost item (triple-apple costs 1 silver)', () => {
+    const state = stateWithCurrencies({ copper: 0, silver: 0, gold: 1 })
+    // triple-apple costs 1 silver; 1 gold = 100 silver, so we can afford it
+    const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'triple-apple' })
+    expect(next.reel.icons.length).toBe(state.reel.icons.length + 1)
+  })
+})
+
+// ─── TOGGLE_ICON (US1) ────────────────────────────────────────────────────────
+
+describe('TOGGLE_ICON action', () => {
+  function stateWith13Icons(): GameState {
+    const base = makeInitialState()
+    const extraIcons = Array.from({ length: 9 }, (_, i) => ({
+      id: `extra-${i}`,
+      definitionId: 'apple',
+    }))
+    return {
+      ...base,
+      phase: 'market',
+      reel: { icons: [...base.reel.icons, ...extraIcons] },
+    }
+  }
+
+  it('disables an icon by adding its id to disabledIconIds', () => {
+    const state = stateWith13Icons()
+    const iconId = state.reel.icons[0].id
+    const next = gameReducer(state, { type: 'TOGGLE_ICON', iconId })
+    expect(next.disabledIconIds).toContain(iconId)
+  })
+
+  it('re-enables a disabled icon by removing its id from disabledIconIds', () => {
+    const state = stateWith13Icons()
+    const iconId = state.reel.icons[0].id
+    const disabled = gameReducer(state, { type: 'TOGGLE_ICON', iconId })
+    const reenabled = gameReducer(disabled, { type: 'TOGGLE_ICON', iconId })
+    expect(reenabled.disabledIconIds).not.toContain(iconId)
+  })
+
+  it('enforces 12-icon floor: cannot disable when exactly 12 enabled', () => {
+    const state = stateWith13Icons() // 13 icons, 0 disabled → 13 enabled
+    const iconId = state.reel.icons[0].id
+    const after12 = gameReducer(state, { type: 'TOGGLE_ICON', iconId }) // now 12 enabled
+    expect(after12.disabledIconIds).toHaveLength(1)
+    const iconId2 = state.reel.icons[1].id
+    const blocked = gameReducer(after12, { type: 'TOGGLE_ICON', iconId: iconId2 })
+    expect(blocked.disabledIconIds).toHaveLength(1) // still 1, not 2
+    expect(blocked).toBe(after12)
+  })
+
+  it('is a no-op when not in market phase', () => {
+    const state: GameState = { ...stateWith13Icons(), phase: 'magic' }
+    const iconId = state.reel.icons[0].id
+    const next = gameReducer(state, { type: 'TOGGLE_ICON', iconId })
+    expect(next).toBe(state)
+  })
+
+  it('does nothing when reel has fewer than 13 icons (all 4 initial icons cannot be disabled)', () => {
+    const state = makeInitialState() // 4 icons
+    const iconId = state.reel.icons[0].id
+    const next = gameReducer(state, { type: 'TOGGLE_ICON', iconId })
+    expect(next).toBe(state)
   })
 })
 

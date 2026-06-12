@@ -112,6 +112,7 @@ export interface GameState {
   magicCounters: MagicCounters
   masterOfElements: boolean
   pendingMultiplier: SpinMultiplier
+  disabledIconIds: string[]
 }
 
 export type MagicMode = 'respin' | 'swap' | 'lock' | 'increaseValue' | null
@@ -130,3 +131,4 @@ export type GameAction =
   | { type: 'RESTORE_STATE'; savedState: GameState }
   | { type: 'UPDATE_SETTINGS'; patch: Partial<PlayerSettings> }
   | { type: 'SET_CURRENCY'; currency: CurrencyKey; amount: number }
+  | { type: 'TOGGLE_ICON'; iconId: string }
