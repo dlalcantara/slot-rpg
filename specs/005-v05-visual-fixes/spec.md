@@ -177,6 +177,39 @@ balance updates accordingly.
 
 ---
 
+### User Story 9 - Unified magic action selector (Priority: P2)
+
+During the Magic Phase the player selects which ability to perform by clicking directly on the
+ability's row in the magic guide (the row that shows the ability, its cost, and availability). There
+is a single place to choose an action, rather than a separate set of toggle buttons duplicating the
+guide.
+
+**Why this priority**: The Magic Phase currently presents two parallel controls — a row of action
+toggle buttons and a separate informational rules guide — with no visual link between them, which
+confuses players about how to pick an action. Merging them into one clickable guide removes the
+duplication and makes selection obvious. It improves the core Magic Phase interaction but does not
+block the spin/claim loop.
+
+**Independent Test**: Enter the Magic Phase and confirm that clicking an ability row in the guide
+selects that ability (highlighted as active), that clicking it again or choosing another row changes
+the selection, and that the separate duplicate toggle buttons no longer exist.
+
+**Acceptance Scenarios**:
+
+1. **Given** the player is in the Magic Phase, **When** they click an ability's row in the guide,
+   **Then** that ability becomes the active selection and is visually indicated as selected.
+2. **Given** an ability row is selected, **When** the player clicks a different ability's row, **Then**
+   the selection moves to that ability.
+3. **Given** an ability row is selected, **When** the player clicks the same row again, **Then** the
+   selection is cleared (no ability active).
+4. **Given** an ability is unaffordable or unavailable, **When** the player views its row, **Then**
+   the row indicates it cannot be selected and selecting it has no effect.
+5. **Given** the swap ability is active and one cell is chosen, **When** the player needs to pick the
+   second cell, **Then** the in-progress hint (e.g., "select 2nd cell") is shown within the unified
+   guide.
+
+---
+
 ### Edge Cases
 
 - What happens when a respin lands on the same symbols it started with? The animation/result still
@@ -217,6 +250,12 @@ balance updates accordingly.
   balances.
 - **FR-013**: The cheat MUST remain hidden and inactive during normal play and MUST NOT affect the
   normal player experience unless deliberately triggered.
+- **FR-014**: The Magic Phase MUST present a single action selector: clicking an ability's row in the
+  magic guide MUST select that ability, with the active ability clearly indicated. Separate duplicate
+  action toggle controls MUST NOT be presented.
+- **FR-015**: In the unified selector, clicking the active ability's row again MUST clear the
+  selection, and an unaffordable/unavailable ability's row MUST not be selectable; in-progress hints
+  (such as the swap "select 2nd cell" prompt) MUST appear within the unified guide.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -251,6 +290,9 @@ balance updates accordingly.
   resources (10 Air, 10 Water, 100 Food).
 - **SC-008**: A developer can change any resource balance via the cheat within 15 seconds, and the
   cheat is not discoverable during normal play without knowing the trigger.
+- **SC-009**: The Magic Phase presents exactly one action-selection control; a first-time player can
+  select an ability by clicking its guide row on the first attempt, with no duplicate toggle controls
+  present.
 
 ## Assumptions
 
