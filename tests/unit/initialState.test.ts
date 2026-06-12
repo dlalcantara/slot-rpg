@@ -28,8 +28,8 @@ describe('initial state (US7)', () => {
     expect(state.currencies.water).toBe(10)
   })
 
-  it('new game starts with food=100', () => {
+  it('new game starts with food=10', () => {
     const state = makeInitialState()
-    expect(state.currencies.food).toBe(100)
+    expect(state.currencies.food).toBe(10)
   })
 })

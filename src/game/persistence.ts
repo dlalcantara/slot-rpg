@@ -1,7 +1,7 @@
 import type { GameState } from './types'
 
 const STORAGE_KEY = 'slot-rpg-state'
-const CURRENT_VERSION = 5
+const CURRENT_VERSION = 6
 
 export function saveState(state: GameState): void {
   try {
@@ -18,7 +18,14 @@ export function loadState(): GameState | null {
     const parsed = JSON.parse(raw) as Record<string, unknown>
     if (typeof parsed.version !== 'number') return null
     if (parsed.version === 4) {
-      return { ...(parsed as unknown as GameState), version: 5, disabledIconIds: [] }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { disabledIconIds: _d, ...rest4 } = parsed as Record<string, unknown>
+      return { ...(rest4 as unknown as GameState), version: 5, blockedColumns: [] }
+    }
+    if (parsed.version === 5) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { disabledIconIds: _d, lockedColumns: _l, ...rest5 } = parsed as Record<string, unknown>
+      return { ...(rest5 as unknown as GameState), version: 6, blockedColumns: [] }
     }
     if (parsed.version !== CURRENT_VERSION) return null
     return parsed as unknown as GameState

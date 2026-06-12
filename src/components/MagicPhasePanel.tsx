@@ -1,9 +1,10 @@
-import type { Currencies, MagicCounters, MagicMode } from '../game/types'
+import type { Currencies, MagicCounters, MagicMode, SpinMultiplier } from '../game/types'
 
 interface Props {
   currencies: Currencies
   magicCounters: MagicCounters
-  lockedColumns: number[]
+  blockedColumns: number[]
+  multiplier: SpinMultiplier
   magicMode: MagicMode
   swapFrom: { col: number; row: number } | null
   onSelectMode: (mode: MagicMode) => void
@@ -49,16 +50,16 @@ function ActionRow({ mode, label, currencyLabel, currentCost, available, disable
   )
 }
 
-export function MagicPhasePanel({ currencies, magicCounters, lockedColumns, magicMode, swapFrom, onSelectMode }: Props) {
+export function MagicPhasePanel({ currencies, magicCounters, blockedColumns, multiplier, magicMode, swapFrom, onSelectMode }: Props) {
   const air = currencies.air ?? 0
   const water = currencies.water ?? 0
   const earth = currencies.earth ?? 0
   const fire = currencies.fire ?? 0
 
-  const respinCost = cost(magicCounters.respin)
-  const swapCost = cost(magicCounters.swap)
-  const lockCost = lockedColumns.length + 1
-  const increaseCost = cost(magicCounters.increaseValue)
+  const respinCost = cost(magicCounters.respin) * multiplier
+  const swapCost = cost(magicCounters.swap) * multiplier
+  const blockCost = (blockedColumns.length + 1) * multiplier
+  const increaseCost = cost(magicCounters.increaseValue) * multiplier
 
   function toggle(mode: NonNullable<MagicMode>) {
     onSelectMode(magicMode === mode ? null : mode)
@@ -91,14 +92,14 @@ export function MagicPhasePanel({ currencies, magicCounters, lockedColumns, magi
           onClick={() => toggle('swap')}
         />
         <ActionRow
-          mode="lock"
-          label={`Lock Column — ${lockedColumns.length}/3 locked`}
+          mode="block"
+          label={`Block Column — ${blockedColumns.length}/4 blocked`}
           currencyLabel="Earth"
-          currentCost={lockCost}
+          currentCost={blockCost}
           available={earth}
-          disabled={earth < lockCost || lockedColumns.length >= 3}
-          selected={magicMode === 'lock'}
-          onClick={() => toggle('lock')}
+          disabled={earth < blockCost || blockedColumns.length >= 4}
+          selected={magicMode === 'block'}
+          onClick={() => toggle('block')}
         />
         <ActionRow
           mode="increaseValue"
@@ -118,9 +119,9 @@ export function MagicPhasePanel({ currencies, magicCounters, lockedColumns, magi
         </p>
       )}
 
-      {lockedColumns.length > 0 && (
+      {blockedColumns.length > 0 && (
         <p className="text-xs text-amber-400">
-          Locked: columns {lockedColumns.map((c) => c + 1).join(', ')}
+          Blocked: columns {blockedColumns.map((c) => c + 1).join(', ')}
         </p>
       )}
     </div>

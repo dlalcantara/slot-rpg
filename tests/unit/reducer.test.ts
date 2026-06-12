@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { gameReducer } from '@/game/reducer'
-import { makeInitialState } from '@/game/initialState'
+import { makeInitialState, PRESTIGE_STARTING_CURRENCIES } from '@/game/initialState'
 import type { GameState, MagicCell } from '@/game/types'
 
 vi.mock('@/game/persistence', () => ({
@@ -80,36 +80,11 @@ describe('SPIN action', () => {
     expect(next.pendingMultiplier).toBe(10)
   })
 
-  it('preserves locked columns from previous lastSpinResult', () => {
-    const fireCol = [
-      { id: 'locked0', definitionId: 'fire' },
-      { id: 'locked1', definitionId: 'fire' },
-      { id: 'locked2', definitionId: 'fire' },
-    ]
-    const lastSpinResult = {
-      columns: Array(5).fill(null).map((_, i) =>
-        i === 2 ? fireCol : [
-          { id: `c${i}r0`, definitionId: 'blank' },
-          { id: `c${i}r1`, definitionId: 'blank' },
-          { id: `c${i}r2`, definitionId: 'blank' },
-        ]
-      ),
-      payouts: [],
-    }
-    const state: GameState = {
-      ...stateWithCurrencies({ food: 10 }),
-      phase: 'market',
-      lastSpinResult,
-      lockedColumns: [2],
-    }
+  it('draws all 5 columns fresh (no locked column carry-over)', () => {
+    const state = stateWithCurrencies({ food: 10 })
     const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    expect(next.magicGrid![2][0].icon.definitionId).toBe('fire')
-  })
-
-  it('preserves lockedColumns during spinning phase (not cleared by SPIN)', () => {
-    const state: GameState = { ...stateWithCurrencies({ food: 10 }), lockedColumns: [1, 3] }
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-    expect(next.lockedColumns).toEqual([1, 3])
+    expect(mockDrawColumn).toHaveBeenCalledTimes(5)
+    expect(next.magicGrid!.length).toBe(5)
   })
 })
 
@@ -132,14 +107,14 @@ describe('BEGIN_MAGIC_PHASE action', () => {
     expect(next.magicCounters).toEqual({ respin: 0, swap: 0, increaseValue: 0 })
   })
 
-  it('clears lockedColumns', () => {
+  it('resets blockedColumns to empty', () => {
     const state: GameState = {
       ...stateWithCurrencies({ food: 10 }),
       phase: 'spinning',
-      lockedColumns: [0, 2],
+      blockedColumns: [0, 2],
     }
     const next = gameReducer(state, { type: 'BEGIN_MAGIC_PHASE' })
-    expect(next.lockedColumns).toEqual([])
+    expect(next.blockedColumns).toEqual([])
   })
 
   it('is a no-op when not in spinning phase', () => {
@@ -167,6 +142,15 @@ describe('MAGIC_RESPIN action', () => {
     })
     const next = gameReducer(state, { type: 'MAGIC_RESPIN', colIdx: 0 })
     expect(next.currencies.air).toBe(8) // 10 - 2
+  })
+
+  it('multiplies cost by pendingMultiplier', () => {
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, air: 20 },
+      pendingMultiplier: 10,
+    })
+    const next = gameReducer(state, { type: 'MAGIC_RESPIN', colIdx: 0 })
+    expect(next.currencies.air).toBe(10) // 20 - (1 * 10)
   })
 
   it('increments respin counter', () => {
@@ -202,6 +186,15 @@ describe('MAGIC_SWAP action', () => {
     expect(next.currencies.water).toBe(4)
   })
 
+  it('multiplies swap cost by pendingMultiplier', () => {
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, water: 20 },
+      pendingMultiplier: 10,
+    })
+    const next = gameReducer(state, { type: 'MAGIC_SWAP', fromCol: 0, fromRow: 0, toCol: 0, toRow: 1 })
+    expect(next.currencies.water).toBe(10) // 20 - (1 * 10)
+  })
+
   it('swaps two adjacent cells', () => {
     const state = magicState({ currencies: { ...makeInitialState().currencies, water: 5 } })
     const cellA = state.magicGrid![0][0].icon.definitionId
@@ -230,51 +223,70 @@ describe('MAGIC_SWAP action', () => {
   })
 })
 
-// ─── MAGIC_LOCK ───────────────────────────────────────────────────────────────
+// ─── MAGIC_BLOCK_COLUMN ───────────────────────────────────────────────────────
 
-describe('MAGIC_LOCK action', () => {
-  it('deducts 1 Earth for first lock', () => {
+describe('MAGIC_BLOCK_COLUMN action', () => {
+  it('deducts 1 Earth for first block', () => {
     const state = magicState({ currencies: { ...makeInitialState().currencies, earth: 5 } })
-    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 0 })
+    const next = gameReducer(state, { type: 'MAGIC_BLOCK_COLUMN', colIdx: 0 })
     expect(next.currencies.earth).toBe(4)
   })
 
-  it('deducts 2 Earth for second lock', () => {
+  it('deducts 2 Earth for second block', () => {
     const state = magicState({
       currencies: { ...makeInitialState().currencies, earth: 5 },
-      lockedColumns: [1],
+      blockedColumns: [1],
     })
-    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 0 })
+    const next = gameReducer(state, { type: 'MAGIC_BLOCK_COLUMN', colIdx: 0 })
     expect(next.currencies.earth).toBe(3)
   })
 
-  it('appends column index to lockedColumns', () => {
-    const state = magicState({ currencies: { ...makeInitialState().currencies, earth: 5 } })
-    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 3 })
-    expect(next.lockedColumns).toContain(3)
+  it('multiplies first block cost by x10 multiplier → costs 10 Earth', () => {
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, earth: 20 },
+      pendingMultiplier: 10,
+    })
+    const next = gameReducer(state, { type: 'MAGIC_BLOCK_COLUMN', colIdx: 0 })
+    expect(next.currencies.earth).toBe(10) // 20 - (1 * 10)
   })
 
-  it('is a no-op when 3 columns already locked', () => {
+  it('multiplies second block cost by x10 multiplier → costs 20 Earth', () => {
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, earth: 30 },
+      blockedColumns: [1],
+      pendingMultiplier: 10,
+    })
+    const next = gameReducer(state, { type: 'MAGIC_BLOCK_COLUMN', colIdx: 0 })
+    expect(next.currencies.earth).toBe(10) // 30 - (2 * 10)
+  })
+
+  it('appends column index to blockedColumns', () => {
+    const state = magicState({ currencies: { ...makeInitialState().currencies, earth: 5 } })
+    const next = gameReducer(state, { type: 'MAGIC_BLOCK_COLUMN', colIdx: 3 })
+    expect(next.blockedColumns).toContain(3)
+  })
+
+  it('is a no-op when 4 columns already blocked', () => {
     const state = magicState({
       currencies: { ...makeInitialState().currencies, earth: 10 },
-      lockedColumns: [0, 1, 2],
+      blockedColumns: [0, 1, 2, 3],
     })
-    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 3 })
+    const next = gameReducer(state, { type: 'MAGIC_BLOCK_COLUMN', colIdx: 4 })
     expect(next).toBe(state)
   })
 
-  it('is a no-op when column already locked', () => {
+  it('is a no-op when column already blocked', () => {
     const state = magicState({
       currencies: { ...makeInitialState().currencies, earth: 5 },
-      lockedColumns: [2],
+      blockedColumns: [2],
     })
-    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 2 })
+    const next = gameReducer(state, { type: 'MAGIC_BLOCK_COLUMN', colIdx: 2 })
     expect(next).toBe(state)
   })
 
   it('is a no-op when Earth insufficient', () => {
     const state = magicState({ currencies: { ...makeInitialState().currencies, earth: 0 } })
-    const next = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 0 })
+    const next = gameReducer(state, { type: 'MAGIC_BLOCK_COLUMN', colIdx: 0 })
     expect(next).toBe(state)
   })
 })
@@ -303,7 +315,7 @@ describe('MAGIC_INCREASE_VALUE action', () => {
     expect(next.magicGrid![0][0].valueOverride).toBe(2) // 1 + 1 (not 1 + cost)
   })
 
-  it('handles triple-apple (base=3): first use → 4', () => {
+  it('handles triple-apple (base=2): first use → 3', () => {
     const grid: MagicCell[][] = Array(5).fill(null).map((_, ci) => [
       { icon: { id: `c${ci}r0`, definitionId: 'triple-apple' }, valueOverride: null },
       { icon: { id: `c${ci}r1`, definitionId: 'triple-apple' }, valueOverride: null },
@@ -314,10 +326,10 @@ describe('MAGIC_INCREASE_VALUE action', () => {
       magicGrid: grid,
     })
     const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
-    expect(next.magicGrid![0][0].valueOverride).toBe(4) // 3 + 1
+    expect(next.magicGrid![0][0].valueOverride).toBe(3) // 2 + 1
   })
 
-  it('handles dozen-apple (base=12): first use → 13', () => {
+  it('handles dozen-apple (base=3): first use → 4', () => {
     const grid: MagicCell[][] = Array(5).fill(null).map((_, ci) => [
       { icon: { id: `c${ci}r0`, definitionId: 'dozen-apple' }, valueOverride: null },
       { icon: { id: `c${ci}r1`, definitionId: 'dozen-apple' }, valueOverride: null },
@@ -328,7 +340,7 @@ describe('MAGIC_INCREASE_VALUE action', () => {
       magicGrid: grid,
     })
     const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
-    expect(next.magicGrid![0][0].valueOverride).toBe(13) // 12 + 1
+    expect(next.magicGrid![0][0].valueOverride).toBe(4) // 3 + 1
   })
 
   it('stacks on existing valueOverride by exactly +1 regardless of cost', () => {
@@ -340,7 +352,7 @@ describe('MAGIC_INCREASE_VALUE action', () => {
     const state = magicState({
       currencies: { ...makeInitialState().currencies, fire: 5 },
       magicGrid: grid,
-      magicCounters: { respin: 0, swap: 0, increaseValue: 2 }, // next cost = 3 but increment is always +1
+      magicCounters: { respin: 0, swap: 0, increaseValue: 2 },
     })
     const next = gameReducer(state, { type: 'MAGIC_INCREASE_VALUE', colIdx: 0, rowIdx: 0 })
     expect(next.magicGrid![0][0].valueOverride).toBe(4) // 3 + 1 (not 3 + cost)
@@ -376,11 +388,32 @@ describe('CLAIM action', () => {
     expect(next.magicGrid).toBeNull()
   })
 
-  it('sets lastSpinResult from magicGrid', () => {
+  it('resets blockedColumns to empty', () => {
+    const state = magicState({ blockedColumns: [1, 3] })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.blockedColumns).toEqual([])
+  })
+
+  it('sets lastSpinResult from magicGrid (all 5 columns)', () => {
     const state = magicState()
     const next = gameReducer(state, { type: 'CLAIM' })
     expect(next.lastSpinResult).not.toBeNull()
     expect(next.lastSpinResult!.columns.length).toBe(5)
+  })
+
+  it('excludes blocked columns from payout calculation', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    const spy = vi.mocked(calculatePayouts)
+    spy.mockReturnValueOnce([])
+
+    // Block column 4 (index 4); active columns should be 0-3
+    const state = magicState({ blockedColumns: [4] })
+    gameReducer(state, { type: 'CLAIM' })
+
+    // calculatePayouts should be called with only 4 columns
+    expect(spy).toHaveBeenCalledOnce()
+    const columnsArg = spy.mock.calls[0][0]
+    expect(columnsArg).toHaveLength(4)
   })
 
   it('awards payouts to currencies', async () => {
@@ -444,6 +477,28 @@ describe('CLAIM action', () => {
   })
 })
 
+// ─── CLAIM with blocked columns (T006) ────────────────────────────────────────
+
+describe('CLAIM with blocked columns', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('payout uses only active (non-blocked) columns; blockedColumns cleared after CLAIM', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    const spy = vi.mocked(calculatePayouts)
+    spy.mockReturnValueOnce([{ family: 'apple', amount: 4, currency: 'food' }])
+
+    const state = magicState({ blockedColumns: [0] })
+    const next = gameReducer(state, { type: 'CLAIM' })
+
+    // Called with 4 active columns
+    expect(spy.mock.calls[0][0]).toHaveLength(4)
+    // blockedColumns reset
+    expect(next.blockedColumns).toEqual([])
+    // lastSpinResult still has all 5 columns for display
+    expect(next.lastSpinResult!.columns).toHaveLength(5)
+  })
+})
+
 // ─── BUY_ICON ─────────────────────────────────────────────────────────────────
 
 describe('BUY_ICON action', () => {
@@ -476,6 +531,37 @@ describe('BUY_ICON action', () => {
     expect(next.currencies.gold).toBe(0)
     expect(next.reel.icons[next.reel.icons.length - 1].definitionId).toBe('fire')
   })
+
+  it('3rd copy of an icon can be purchased', () => {
+    const base = stateWithCurrencies({ copper: 5 })
+    // Start with 2 (initial apple + 1 extra), buying 3rd should succeed
+    const with1extra = {
+      ...base,
+      reel: {
+        icons: [...base.reel.icons, { id: 'extra-apple-1', definitionId: 'apple' }],
+      },
+    }
+    const next = gameReducer(with1extra, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    expect(next.reel.icons.filter((i) => i.definitionId === 'apple').length).toBe(3)
+  })
+
+  it('4th copy of an icon is rejected (3-copy cap)', () => {
+    const base = stateWithCurrencies({ copper: 10 })
+    const with3apples = {
+      ...base,
+      reel: {
+        icons: [
+          ...base.reel.icons,
+          { id: 'extra-apple-1', definitionId: 'apple' },
+          { id: 'extra-apple-2', definitionId: 'apple' },
+        ],
+      },
+    }
+    // Now base.reel.icons already has 1 apple + 2 extras = 3 apples
+    const next = gameReducer(with3apples, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    expect(next).toBe(with3apples)
+    expect(next.reel.icons.filter((i) => i.definitionId === 'apple').length).toBe(3)
+  })
 })
 
 // ─── WIN / GAMEOVER / RESET ───────────────────────────────────────────────────
@@ -499,7 +585,7 @@ describe('WIN condition', () => {
 })
 
 describe('HARD_RESET action', () => {
-  it('returns exact initial state', () => {
+  it('returns fresh state with prestige starting currencies', () => {
     const state: GameState = {
       ...makeInitialState(),
       currencies: { food: 5, copper: 50, silver: 2, gold: 1, crowns: 90, air: 3, water: 3, earth: 3, fire: 3 },
@@ -507,11 +593,13 @@ describe('HARD_RESET action', () => {
     }
     const next = gameReducer(state, { type: 'HARD_RESET' })
     expect(next.phase).toBe('market')
-    expect(next.currencies.food).toBe(100)
+    expect(next.currencies.food).toBe(10)
+    expect(next.currencies.air).toBe(10)
+    expect(next.currencies.water).toBe(10)
     expect(next.reel.icons.length).toBe(4)
     expect(next.lastSpinResult).toBeNull()
     expect(next.magicGrid).toBeNull()
-    expect(next.lockedColumns).toEqual([])
+    expect(next.blockedColumns).toEqual([])
     expect(next.masterOfElements).toBe(false)
   })
 })
@@ -525,9 +613,9 @@ describe('UPDATE_SETTINGS action', () => {
   })
 })
 
-// ─── tryBuyIcon multi-level currency conversion (US5) ─────────────────────────
+// ─── tryBuyIcon multi-level currency conversion ────────────────────────────────
 
-describe('BUY_ICON multi-level currency conversion (US5)', () => {
+describe('BUY_ICON multi-level currency conversion', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('succeeds with 0 copper but sufficient silver (one-level conversion)', () => {
@@ -553,66 +641,8 @@ describe('BUY_ICON multi-level currency conversion (US5)', () => {
 
   it('succeeds with 0 silver but sufficient gold for a silver-cost item (triple-apple costs 1 silver)', () => {
     const state = stateWithCurrencies({ copper: 0, silver: 0, gold: 1 })
-    // triple-apple costs 1 silver; 1 gold = 100 silver, so we can afford it
     const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'triple-apple' })
     expect(next.reel.icons.length).toBe(state.reel.icons.length + 1)
-  })
-})
-
-// ─── TOGGLE_ICON (US1) ────────────────────────────────────────────────────────
-
-describe('TOGGLE_ICON action', () => {
-  function stateWith13Icons(): GameState {
-    const base = makeInitialState()
-    const extraIcons = Array.from({ length: 9 }, (_, i) => ({
-      id: `extra-${i}`,
-      definitionId: 'apple',
-    }))
-    return {
-      ...base,
-      phase: 'market',
-      reel: { icons: [...base.reel.icons, ...extraIcons] },
-    }
-  }
-
-  it('disables an icon by adding its id to disabledIconIds', () => {
-    const state = stateWith13Icons()
-    const iconId = state.reel.icons[0].id
-    const next = gameReducer(state, { type: 'TOGGLE_ICON', iconId })
-    expect(next.disabledIconIds).toContain(iconId)
-  })
-
-  it('re-enables a disabled icon by removing its id from disabledIconIds', () => {
-    const state = stateWith13Icons()
-    const iconId = state.reel.icons[0].id
-    const disabled = gameReducer(state, { type: 'TOGGLE_ICON', iconId })
-    const reenabled = gameReducer(disabled, { type: 'TOGGLE_ICON', iconId })
-    expect(reenabled.disabledIconIds).not.toContain(iconId)
-  })
-
-  it('enforces 12-icon floor: cannot disable when exactly 12 enabled', () => {
-    const state = stateWith13Icons() // 13 icons, 0 disabled → 13 enabled
-    const iconId = state.reel.icons[0].id
-    const after12 = gameReducer(state, { type: 'TOGGLE_ICON', iconId }) // now 12 enabled
-    expect(after12.disabledIconIds).toHaveLength(1)
-    const iconId2 = state.reel.icons[1].id
-    const blocked = gameReducer(after12, { type: 'TOGGLE_ICON', iconId: iconId2 })
-    expect(blocked.disabledIconIds).toHaveLength(1) // still 1, not 2
-    expect(blocked).toBe(after12)
-  })
-
-  it('is a no-op when not in market phase', () => {
-    const state: GameState = { ...stateWith13Icons(), phase: 'magic' }
-    const iconId = state.reel.icons[0].id
-    const next = gameReducer(state, { type: 'TOGGLE_ICON', iconId })
-    expect(next).toBe(state)
-  })
-
-  it('does nothing when reel has fewer than 13 icons (all 4 initial icons cannot be disabled)', () => {
-    const state = makeInitialState() // 4 icons
-    const iconId = state.reel.icons[0].id
-    const next = gameReducer(state, { type: 'TOGGLE_ICON', iconId })
-    expect(next).toBe(state)
   })
 })
 
@@ -667,5 +697,138 @@ describe('SET_CURRENCY action', () => {
     const next = gameReducer(state, { type: 'SET_CURRENCY', currency: 'food', amount: 200 })
     expect(next.phase).toBe(state.phase)
     expect(next.currencies.air).toBe(state.currencies.air)
+  })
+})
+
+// ─── PRESTIGE (T040) ──────────────────────────────────────────────────────────
+
+describe('PRESTIGE action', () => {
+  function buildReelWith3xIcons(defIds: string[]): GameState['reel'] {
+    const icons = defIds.flatMap((defId) => [
+      { id: `${defId}-1`, definitionId: defId },
+      { id: `${defId}-2`, definitionId: defId },
+      { id: `${defId}-3`, definitionId: defId },
+    ])
+    return { icons }
+  }
+
+  it('resets reel to 1 copy of each selected defId', () => {
+    const state: GameState = {
+      ...makeInitialState(),
+      phase: 'market',
+      reel: buildReelWith3xIcons(['apple', 'copper', 'air', 'water']),
+    }
+    const next = gameReducer(state, {
+      type: 'PRESTIGE',
+      keepDefinitionIds: ['apple', 'copper', 'air', 'water'],
+    })
+    expect(next.reel.icons).toHaveLength(4)
+    const defIds = next.reel.icons.map((i) => i.definitionId)
+    expect(defIds).toContain('apple')
+    expect(defIds).toContain('copper')
+    expect(defIds).toContain('air')
+    expect(defIds).toContain('water')
+  })
+
+  it('resets currencies to PRESTIGE_STARTING_CURRENCIES', () => {
+    const state: GameState = {
+      ...makeInitialState(),
+      phase: 'market',
+      reel: buildReelWith3xIcons(['apple', 'copper', 'air', 'water']),
+      currencies: { food: 500, copper: 9999, silver: 100, gold: 50, crowns: 0, air: 0, water: 0, earth: 0, fire: 0 },
+    }
+    const next = gameReducer(state, {
+      type: 'PRESTIGE',
+      keepDefinitionIds: ['apple', 'copper', 'air', 'water'],
+    })
+    expect(next.currencies).toMatchObject(PRESTIGE_STARTING_CURRENCIES)
+  })
+
+  it('preserves spinCount', () => {
+    const state: GameState = {
+      ...makeInitialState(),
+      phase: 'market',
+      spinCount: 42,
+      reel: buildReelWith3xIcons(['apple', 'copper', 'air', 'water']),
+    }
+    const next = gameReducer(state, {
+      type: 'PRESTIGE',
+      keepDefinitionIds: ['apple', 'copper', 'air', 'water'],
+    })
+    expect(next.spinCount).toBe(42)
+  })
+
+  it('resets phase to market', () => {
+    const state: GameState = {
+      ...makeInitialState(),
+      phase: 'market',
+      reel: buildReelWith3xIcons(['apple', 'copper', 'air', 'water']),
+    }
+    const next = gameReducer(state, {
+      type: 'PRESTIGE',
+      keepDefinitionIds: ['apple', 'copper', 'air', 'water'],
+    })
+    expect(next.phase).toBe('market')
+  })
+
+  it('is a no-op when fewer than 4 defIds selected', () => {
+    const state: GameState = {
+      ...makeInitialState(),
+      phase: 'market',
+      reel: buildReelWith3xIcons(['apple', 'copper', 'air', 'water']),
+    }
+    const next = gameReducer(state, {
+      type: 'PRESTIGE',
+      keepDefinitionIds: ['apple', 'copper', 'air'],
+    })
+    expect(next).toBe(state)
+  })
+
+  it('is a no-op when selected defId does not have 3 copies in reel', () => {
+    const state: GameState = {
+      ...makeInitialState(),
+      phase: 'market',
+      reel: buildReelWith3xIcons(['apple', 'copper', 'air']),
+    }
+    // 'water' has 0 copies — invalid selection
+    const next = gameReducer(state, {
+      type: 'PRESTIGE',
+      keepDefinitionIds: ['apple', 'copper', 'air', 'water'],
+    })
+    expect(next).toBe(state)
+  })
+
+  it('allows selecting 5 icons (keeps 1 copy each)', () => {
+    const state: GameState = {
+      ...makeInitialState(),
+      phase: 'market',
+      reel: buildReelWith3xIcons(['apple', 'copper', 'air', 'water', 'earth']),
+    }
+    const next = gameReducer(state, {
+      type: 'PRESTIGE',
+      keepDefinitionIds: ['apple', 'copper', 'air', 'water', 'earth'],
+    })
+    expect(next.reel.icons).toHaveLength(5)
+  })
+
+  it('resets magicGrid, blockedColumns, magicCounters, masterOfElements, pendingMultiplier', () => {
+    const state: GameState = {
+      ...makeInitialState(),
+      phase: 'market',
+      reel: buildReelWith3xIcons(['apple', 'copper', 'air', 'water']),
+      blockedColumns: [1],
+      magicCounters: { respin: 5, swap: 3, increaseValue: 2 },
+      masterOfElements: true,
+      pendingMultiplier: 10,
+    }
+    const next = gameReducer(state, {
+      type: 'PRESTIGE',
+      keepDefinitionIds: ['apple', 'copper', 'air', 'water'],
+    })
+    expect(next.blockedColumns).toEqual([])
+    expect(next.magicCounters).toEqual({ respin: 0, swap: 0, increaseValue: 0 })
+    expect(next.masterOfElements).toBe(false)
+    expect(next.pendingMultiplier).toBe(1)
+    expect(next.magicGrid).toBeNull()
   })
 })

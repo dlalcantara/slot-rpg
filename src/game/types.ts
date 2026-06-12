@@ -108,21 +108,20 @@ export interface GameState {
   settings: PlayerSettings
   gameLog: SpinLogEntry[]
   magicGrid: MagicCell[][] | null
-  lockedColumns: number[]
+  blockedColumns: number[]
   magicCounters: MagicCounters
   masterOfElements: boolean
   pendingMultiplier: SpinMultiplier
-  disabledIconIds: string[]
 }
 
-export type MagicMode = 'respin' | 'swap' | 'lock' | 'increaseValue' | null
+export type MagicMode = 'respin' | 'swap' | 'block' | 'increaseValue' | null
 
 export type GameAction =
   | { type: 'SPIN'; multiplier: SpinMultiplier }
   | { type: 'BEGIN_MAGIC_PHASE' }
   | { type: 'MAGIC_RESPIN'; colIdx: number }
   | { type: 'MAGIC_SWAP'; fromCol: number; fromRow: number; toCol: number; toRow: number }
-  | { type: 'MAGIC_LOCK'; colIdx: number }
+  | { type: 'MAGIC_BLOCK_COLUMN'; colIdx: number }
   | { type: 'MAGIC_INCREASE_VALUE'; colIdx: number; rowIdx: number }
   | { type: 'CLAIM' }
   | { type: 'BUY_ICON'; iconDefinitionId: string }
@@ -131,4 +130,4 @@ export type GameAction =
   | { type: 'RESTORE_STATE'; savedState: GameState }
   | { type: 'UPDATE_SETTINGS'; patch: Partial<PlayerSettings> }
   | { type: 'SET_CURRENCY'; currency: CurrencyKey; amount: number }
-  | { type: 'TOGGLE_ICON'; iconId: string }
+  | { type: 'PRESTIGE'; keepDefinitionIds: string[] }

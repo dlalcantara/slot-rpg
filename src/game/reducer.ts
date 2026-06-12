@@ -9,7 +9,7 @@ import { ICON_CATALOG } from './catalog'
 import { CURRENCY_REGISTRY, CURRENCY_ORDER } from './currencyRegistry'
 import { drawColumn, calculatePayouts } from './spinLogic'
 import { saveState, clearState } from './persistence'
-import { makeInitialState } from './initialState'
+import { makeInitialState, PRESTIGE_STARTING_CURRENCIES } from './initialState'
 import { detectMasterOfElements } from './masterOfElements'
 import type { GameAction } from './types'
 
@@ -73,6 +73,9 @@ function tryBuyIcon(state: GameState, iconDefinitionId: string): GameState {
   const def = ICON_CATALOG[iconDefinitionId]
   if (!def || !def.cost) return state
 
+  const ownedCount = state.reel.icons.filter((i) => i.definitionId === iconDefinitionId).length
+  if (ownedCount >= 3) return state
+
   const { currency: costCurrency, amount: costAmount } = def.cost
   const funded = ensureLiquidity({ ...state.currencies }, costCurrency, costAmount)
   if (!funded) return state
@@ -117,14 +120,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const currencies: Currencies = { ...state.currencies, food: state.currencies.food - multiplier }
 
-      // Generate columns, preserving locked columns from previous magic grid
       const newColumns: Icon[][] = []
       for (let i = 0; i < 5; i++) {
-        if (state.lockedColumns.includes(i) && state.lastSpinResult) {
-          newColumns.push(state.lastSpinResult.columns[i])
-        } else {
-          newColumns.push(drawColumn(state.reel, state.disabledIconIds))
-        }
+        newColumns.push(drawColumn(state.reel))
       }
 
       const magicGrid: MagicCell[][] = newColumns.map(iconsToMagicCells)
@@ -147,7 +145,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         phase: 'magic',
         magicCounters: { respin: 0, swap: 0, increaseValue: 0 },
-        lockedColumns: [],
+        blockedColumns: [],
       }
       saveState(newState)
       return newState
@@ -156,10 +154,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'MAGIC_RESPIN': {
       if (state.phase !== 'magic' || !state.magicGrid) return state
       const { colIdx } = action
-      const cost = state.magicCounters.respin + 1
+      const cost = (state.magicCounters.respin + 1) * state.pendingMultiplier
       if ((state.currencies.air ?? 0) < cost) return state
 
-      const newColumn = iconsToMagicCells(drawColumn(state.reel, state.disabledIconIds))
+      const newColumn = iconsToMagicCells(drawColumn(state.reel))
       const newGrid = state.magicGrid.map((col, i) => i === colIdx ? newColumn : col)
 
       const newState: GameState = {
@@ -177,7 +175,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const { fromCol, fromRow, toCol, toRow } = action
       const isAdjacent = Math.abs(fromCol - toCol) + Math.abs(fromRow - toRow) === 1
       if (!isAdjacent) return state
-      const cost = state.magicCounters.swap + 1
+      const cost = (state.magicCounters.swap + 1) * state.pendingMultiplier
       if ((state.currencies.water ?? 0) < cost) return state
 
       const newGrid = state.magicGrid.map((col) => [...col])
@@ -195,17 +193,17 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return newState
     }
 
-    case 'MAGIC_LOCK': {
+    case 'MAGIC_BLOCK_COLUMN': {
       if (state.phase !== 'magic') return state
       const { colIdx } = action
-      if (state.lockedColumns.includes(colIdx)) return state
-      if (state.lockedColumns.length >= 3) return state
-      const cost = state.lockedColumns.length + 1
+      if (state.blockedColumns.includes(colIdx)) return state
+      if (state.blockedColumns.length >= 4) return state
+      const cost = (state.blockedColumns.length + 1) * state.pendingMultiplier
       if ((state.currencies.earth ?? 0) < cost) return state
 
       const newState: GameState = {
         ...state,
-        lockedColumns: [...state.lockedColumns, colIdx],
+        blockedColumns: [...state.blockedColumns, colIdx],
         currencies: { ...state.currencies, earth: (state.currencies.earth ?? 0) - cost },
       }
       saveState(newState)
@@ -219,7 +217,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (!cell) return state
       const def = ICON_CATALOG[cell.icon.definitionId]
       if (!def || def.family === 'blank') return state
-      const cost = state.magicCounters.increaseValue + 1
+      const cost = (state.magicCounters.increaseValue + 1) * state.pendingMultiplier
       if ((state.currencies.fire ?? 0) < cost) return state
 
       const currentValue = cell.valueOverride ?? def.valuePerColumn
@@ -246,8 +244,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const multiplier = state.pendingMultiplier
 
       const overrides = buildOverridesMap(state.magicGrid)
-      const iconColumns = magicGridToIconColumns(state.magicGrid)
-      const rawPayouts = calculatePayouts(iconColumns, overrides)
+      const allIconColumns = magicGridToIconColumns(state.magicGrid)
+      const activeIconColumns = allIconColumns.filter((_, i) => !state.blockedColumns.includes(i))
+      const rawPayouts = calculatePayouts(activeIconColumns, overrides, activeIconColumns.length)
 
       let currencies: Currencies = { ...state.currencies }
       for (const payout of rawPayouts) {
@@ -273,10 +272,42 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         currencies,
         phase,
-        lastSpinResult: { columns: iconColumns, payouts: scaledPayouts },
+        lastSpinResult: { columns: allIconColumns, payouts: scaledPayouts },
         magicGrid: null,
+        blockedColumns: [],
         gameLog,
         masterOfElements,
+      }
+      saveState(newState)
+      return newState
+    }
+
+    case 'PRESTIGE': {
+      if (state.phase !== 'market') return state
+      const { keepDefinitionIds } = action
+      if (keepDefinitionIds.length < 4) return state
+
+      const countMap = new Map<string, number>()
+      for (const icon of state.reel.icons) {
+        countMap.set(icon.definitionId, (countMap.get(icon.definitionId) ?? 0) + 1)
+      }
+      const valid = keepDefinitionIds.every((defId) => (countMap.get(defId) ?? 0) >= 3)
+      if (!valid) return state
+
+      const newState: GameState = {
+        ...state,
+        reel: {
+          icons: keepDefinitionIds.map((defId) => ({ id: crypto.randomUUID(), definitionId: defId })),
+        },
+        currencies: { ...PRESTIGE_STARTING_CURRENCIES },
+        phase: 'market',
+        lastSpinResult: null,
+        magicGrid: null,
+        blockedColumns: [],
+        magicCounters: { respin: 0, swap: 0, increaseValue: 0 },
+        masterOfElements: false,
+        pendingMultiplier: 1,
+        gameLog: [],
       }
       saveState(newState)
       return newState
@@ -315,28 +346,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newState: GameState = {
         ...state,
         currencies: { ...state.currencies, [currency]: Math.floor(amount) },
-      }
-      saveState(newState)
-      return newState
-    }
-
-    case 'TOGGLE_ICON': {
-      if (state.phase !== 'market') return state
-      const { iconId } = action
-      const isDisabled = state.disabledIconIds.includes(iconId)
-      if (isDisabled) {
-        const newState: GameState = {
-          ...state,
-          disabledIconIds: state.disabledIconIds.filter((id) => id !== iconId),
-        }
-        saveState(newState)
-        return newState
-      }
-      const enabledCount = state.reel.icons.length - state.disabledIconIds.length
-      if (enabledCount <= 12) return state
-      const newState: GameState = {
-        ...state,
-        disabledIconIds: [...state.disabledIconIds, iconId],
       }
       saveState(newState)
       return newState

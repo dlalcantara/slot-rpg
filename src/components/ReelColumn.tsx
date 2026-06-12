@@ -9,7 +9,8 @@ interface Props {
   spinning: boolean
   animate: boolean
   colIndex: number
-  locked: boolean
+  blocked: boolean
+  highlights: Map<string, 'green' | 'yellow'>
   isMagicPhase: boolean
   respinToken: number
   isTargetingMode: boolean
@@ -25,7 +26,8 @@ export function ReelColumn({
   spinning,
   animate,
   colIndex,
-  locked,
+  blocked,
+  highlights,
   isMagicPhase,
   respinToken,
   isTargetingMode,
@@ -50,7 +52,7 @@ export function ReelColumn({
       return
     }
 
-    if (locked) {
+    if (blocked) {
       setAnimating(false)
       setDisplayIcons(icons)
       onDone?.()
@@ -88,20 +90,20 @@ export function ReelColumn({
     }
   }, [spinning]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // US2: re-sync display when icons prop changes and no animation is running
+  // Re-sync display when icons prop changes and no animation is running
   useEffect(() => {
     if (!animating) {
       setDisplayIcons(icons)
     }
   }, [icons, animating])
 
-  // US3: per-column respin animation pulse
+  // Per-column respin animation pulse
   const respinIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const respinStopRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (respinToken === 0) return // initial mount, no animation
-    if (!animate) return // animate off: US2 effect handles immediate update
+    if (respinToken === 0) return
+    if (!animate) return
 
     const pool = reelIcons.length > 0 ? reelIcons : icons
     setAnimating(true)
@@ -113,7 +115,6 @@ export function ReelColumn({
       if (respinIntervalRef.current) clearInterval(respinIntervalRef.current)
       respinIntervalRef.current = null
       setAnimating(false)
-      // US2 effect will sync displayIcons to icons (new column) on animating→false
     }, 1000)
 
     return () => {
@@ -129,7 +130,6 @@ export function ReelColumn({
       aria-label={`Reel column ${colIndex + 1}`}
       onClick={onColumnClick}
     >
-      {/* US5: column click target affordance when targeting mode is active */}
       {isTargetingMode && (
         <button
           type="button"
@@ -143,12 +143,18 @@ export function ReelColumn({
         const def = ICON_CATALOG[icon.definitionId]
         const effectiveValue = valueOverrides.get(icon.id) ?? def?.valuePerColumn
         const hasOverride = valueOverrides.has(icon.id)
+        const hl = highlights.get(icon.definitionId)
+        const borderClass = hl === 'green'
+          ? 'ring-2 ring-green-400'
+          : hl === 'yellow'
+          ? 'ring-2 ring-yellow-400'
+          : ''
         return (
           <div
             key={i}
-            className={`icon-cell ${animating && !locked ? 'bg-blue-900 ring-2 ring-blue-400 brightness-125' : ''} ${
+            className={`icon-cell ${borderClass} ${animating && !blocked ? 'bg-blue-900 ring-2 ring-blue-400 brightness-125' : ''} ${
               isMagicPhase ? 'cursor-pointer hover:ring-2 hover:ring-purple-400' : ''
-            } ${locked ? 'ring-2 ring-amber-500' : ''}`}
+            } ${blocked ? 'opacity-40' : ''}`}
             role="listitem"
             onClick={(e) => {
               e.stopPropagation()
@@ -163,15 +169,15 @@ export function ReelColumn({
         )
       })}
 
-      {/* Fixed-height lock indicator slot — always present to keep column heights equal */}
+      {/* Fixed-height block indicator slot — always present to keep column heights equal */}
       <div className="h-6 flex items-center justify-center">
-        {locked && (
+        {blocked && (
           <span
             role="status"
-            aria-label="locked"
-            className="text-xs text-amber-300 font-bold"
+            aria-label="blocked"
+            className="text-xs text-red-400 font-bold"
           >
-            🔒
+            🚫
           </span>
         )}
       </div>

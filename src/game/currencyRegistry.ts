@@ -4,7 +4,7 @@ export const CURRENCY_REGISTRY: Record<string, CurrencyDefinition> = {
   food: {
     key: 'food',
     label: 'Food',
-    startingAmount: 100,
+    startingAmount: 10,
     autoConvertTo: null,
     convertibleFrom: null,
     winCondition: null,

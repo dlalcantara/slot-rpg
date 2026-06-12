@@ -7,15 +7,20 @@ function stableId(prefix: string) {
   return `${prefix}-${++_counter}`
 }
 
-function buildInitialCurrencies(): Record<string, number> {
-  return Object.fromEntries(
-    Object.values(CURRENCY_REGISTRY).map((def) => [def.key, def.startingAmount]),
-  )
+export const PRESTIGE_STARTING_CURRENCIES: Record<string, number> = {
+  food: 10,
+  air: 10,
+  water: 10,
+  ...Object.fromEntries(
+    Object.keys(CURRENCY_REGISTRY)
+      .filter((k) => k !== 'food' && k !== 'air' && k !== 'water')
+      .map((k) => [k, 0])
+  ),
 }
 
 export function makeInitialState(): GameState {
   return {
-    version: 5,
+    version: 6,
     reel: {
       icons: [
         { id: stableId('air'), definitionId: 'air' },
@@ -24,18 +29,17 @@ export function makeInitialState(): GameState {
         { id: stableId('copper'), definitionId: 'copper' },
       ],
     },
-    currencies: buildInitialCurrencies(),
+    currencies: { ...PRESTIGE_STARTING_CURRENCIES },
     phase: 'market',
     lastSpinResult: null,
     spinCount: 0,
     settings: DEFAULT_SETTINGS,
     gameLog: [],
     magicGrid: null,
-    lockedColumns: [],
+    blockedColumns: [],
     magicCounters: { respin: 0, swap: 0, increaseValue: 0 },
     masterOfElements: false,
     pendingMultiplier: 1,
-    disabledIconIds: [],
   }
 }
 

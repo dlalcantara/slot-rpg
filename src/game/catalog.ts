@@ -20,17 +20,17 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
   'triple-apple': {
     definitionId: 'triple-apple',
     family: 'apple',
-    valuePerColumn: 3,
-    label: '3× Apple',
-    effect: { type: 'add_currency', currency: 'food', valuePerColumn: 3 },
+    valuePerColumn: 2,
+    label: '2× Apple',
+    effect: { type: 'add_currency', currency: 'food', valuePerColumn: 2 },
     cost: { currency: 'silver', amount: 1 },
   },
   'dozen-apple': {
     definitionId: 'dozen-apple',
     family: 'apple',
-    valuePerColumn: 12,
-    label: '12× Apple',
-    effect: { type: 'add_currency', currency: 'food', valuePerColumn: 12 },
+    valuePerColumn: 3,
+    label: '3× Apple',
+    effect: { type: 'add_currency', currency: 'food', valuePerColumn: 3 },
     cost: { currency: 'gold', amount: 1 },
   },
   copper: {

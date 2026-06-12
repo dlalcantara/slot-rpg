@@ -33,7 +33,7 @@ describe('spin settle on real result (US1)', () => {
       <SlotGrid
         lastSpinResult={null}
         magicGrid={magicGrid}
-        lockedColumns={[]}
+        blockedColumns={[]}
         reel={reel}
         spinning={true}
         animate={false}
@@ -53,7 +53,7 @@ describe('spin settle on real result (US1)', () => {
       <SlotGrid
         lastSpinResult={null}
         magicGrid={magicGrid}
-        lockedColumns={[]}
+        blockedColumns={[]}
         reel={reel}
         spinning={true}
         animate={true}

@@ -7,7 +7,7 @@ const PLACEHOLDER_COL = [PLACEHOLDER_ICON, PLACEHOLDER_ICON, PLACEHOLDER_ICON]
 interface Props {
   lastSpinResult: SpinResult | null
   magicGrid: MagicCell[][] | null
-  lockedColumns: number[]
+  blockedColumns: number[]
   reel: Reel
   spinning: boolean
   animate: boolean
@@ -21,10 +21,33 @@ interface Props {
   onSwapFrom?: (coords: { col: number; row: number } | null) => void
 }
 
+function computeHighlights(
+  grid: MagicCell[][],
+  blockedCols: number[],
+): Map<string, 'green' | 'yellow'> {
+  const activeCount = grid.length - blockedCols.length
+  const defColSets = new Map<string, Set<number>>()
+  grid.forEach((col, colIdx) => {
+    if (blockedCols.includes(colIdx)) return
+    col.forEach((cell) => {
+      const defId = cell.icon.definitionId
+      if (defId === 'blank') return
+      if (!defColSets.has(defId)) defColSets.set(defId, new Set())
+      defColSets.get(defId)!.add(colIdx)
+    })
+  })
+  const map = new Map<string, 'green' | 'yellow'>()
+  defColSets.forEach((colSet, defId) => {
+    if (colSet.size === activeCount) map.set(defId, 'green')
+    else if (colSet.size === activeCount - 1) map.set(defId, 'yellow')
+  })
+  return map
+}
+
 export function SlotGrid({
   lastSpinResult,
   magicGrid,
-  lockedColumns,
+  blockedColumns,
   reel,
   spinning,
   animate,
@@ -37,8 +60,6 @@ export function SlotGrid({
   onModeChange = () => {},
   onSwapFrom = () => {},
 }: Props) {
-  // Display: use magicGrid whenever present (populated on SPIN), else lastSpinResult or placeholder.
-  // This ensures columns settle on the real result during the spinning phase (US1 fix).
   const displayColumns: Icon[][] = magicGrid
     ? magicGrid.map((col) => col.map((cell) => cell.icon))
     : (lastSpinResult?.columns ?? Array(5).fill(PLACEHOLDER_COL))
@@ -55,13 +76,17 @@ export function SlotGrid({
       })()
     : new Map()
 
+  const highlights: Map<string, 'green' | 'yellow'> = isMagicPhase && magicGrid
+    ? computeHighlights(magicGrid, blockedColumns)
+    : new Map()
+
   const lastColIndex = displayColumns.length - 1
-  const isTargetingMode = magicMode === 'respin' || magicMode === 'lock'
+  const isTargetingMode = magicMode === 'respin' || magicMode === 'block'
 
   function handleCellClick(colIdx: number, rowIdx: number) {
     if (!isMagicPhase) return
 
-    if (magicMode === 'respin' || magicMode === 'lock') return
+    if (magicMode === 'respin' || magicMode === 'block') return
 
     if (magicMode === 'swap') {
       if (!swapFrom) {
@@ -90,8 +115,8 @@ export function SlotGrid({
       return
     }
 
-    if (magicMode === 'lock') {
-      onMagicAction({ type: 'MAGIC_LOCK', colIdx })
+    if (magicMode === 'block') {
+      onMagicAction({ type: 'MAGIC_BLOCK_COLUMN', colIdx })
       onModeChange(null)
       return
     }
@@ -111,7 +136,8 @@ export function SlotGrid({
           spinning={spinning}
           animate={animate}
           colIndex={i}
-          locked={lockedColumns.includes(i)}
+          blocked={blockedColumns.includes(i)}
+          highlights={highlights}
           isMagicPhase={isMagicPhase}
           respinToken={respinTokens[i] ?? 0}
           isTargetingMode={isTargetingMode}

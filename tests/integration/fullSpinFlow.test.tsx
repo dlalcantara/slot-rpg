@@ -48,14 +48,14 @@ describe('full spin flow integration', () => {
 
   it('food decrements after clicking SPIN (deducted at spin time)', () => {
     render(<App />)
-    expect(screen.getByText('100')).toBeInTheDocument()
+    expect(screen.getAllByText('10').length).toBeGreaterThan(0)
     fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
     // Food is deducted synchronously at SPIN action dispatch
     // But displayedCurrencies is frozen during spinning; advance past animation first
     advancePastAnimation()
     // Now in magic phase; click CLAIM to complete round
     fireEvent.click(screen.getByRole('button', { name: 'Claim spin result' }))
-    expect(screen.getByText('99')).toBeInTheDocument()
+    expect(screen.getByText('9')).toBeInTheDocument()
   })
 
   it('shows CLAIM button after spin animation completes', () => {

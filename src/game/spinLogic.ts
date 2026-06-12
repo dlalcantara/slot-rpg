@@ -19,15 +19,18 @@ function extractColumn(icons: Icon[], startOffset: number): Icon[] {
   ]
 }
 
-export function drawColumn(reel: Reel, disabledIconIds: string[] = []): Icon[] {
-  const eligible = reel.icons.filter((icon) => !disabledIconIds.includes(icon.id))
-  const pool = eligible.length > 0 ? eligible : reel.icons
+export function drawColumn(reel: Reel): Icon[] {
+  const pool = reel.icons.length > 0 ? reel.icons : reel.icons
   const shuffled = shuffle(pool)
   const offset = Math.floor(Math.random() * shuffled.length)
   return extractColumn(shuffled, offset)
 }
 
-export function calculatePayouts(columns: Icon[][], overrides?: Map<string, number>): Payout[] {
+export function calculatePayouts(
+  columns: Icon[][],
+  overrides?: Map<string, number>,
+  requiredColumnCount = columns.length,
+): Payout[] {
   const familyPerColumnValues: Map<string, number[]> = new Map()
 
   columns.forEach((col) => {
@@ -46,7 +49,7 @@ export function calculatePayouts(columns: Icon[][], overrides?: Map<string, numb
 
   const payouts: Payout[] = []
   familyPerColumnValues.forEach((colValues, family) => {
-    if (colValues.length < 5) return // must appear in all 5 columns
+    if (colValues.length < requiredColumnCount) return
     const amount = colValues.reduce((acc, v) => acc * v, 1)
     if (amount === 0) return
     const def = Object.values(ICON_CATALOG).find((d) => d.family === family)
@@ -57,10 +60,10 @@ export function calculatePayouts(columns: Icon[][], overrides?: Map<string, numb
   return payouts
 }
 
-export function computeSpin(reel: Reel, disabledIconIds: string[] = []): SpinResult {
+export function computeSpin(reel: Reel): SpinResult {
   const columns: Icon[][] = []
   for (let i = 0; i < 5; i++) {
-    columns.push(drawColumn(reel, disabledIconIds))
+    columns.push(drawColumn(reel))
   }
   const payouts = calculatePayouts(columns)
   return { columns, payouts }

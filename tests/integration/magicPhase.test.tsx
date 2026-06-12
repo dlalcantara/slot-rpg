@@ -84,23 +84,18 @@ describe('full spin → magic phase → CLAIM flow', () => {
     expect(state.phase).toMatch(/^(market|gameover|win)$/)
   })
 
-  it('MAGIC_LOCK → SPIN preserves locked column icons', () => {
+  it('MAGIC_BLOCK_COLUMN → CLAIM excludes blocked column from payout and resets blockedColumns', () => {
     let state = setup()
     state = gameReducer(state, { type: 'SPIN', multiplier: 1 })
     state = gameReducer(state, { type: 'BEGIN_MAGIC_PHASE' })
 
-    const lockedIcons = state.magicGrid![0].map((c) => c.icon.definitionId)
-    state = gameReducer(state, { type: 'MAGIC_LOCK', colIdx: 0 })
-    expect(state.lockedColumns).toContain(0)
+    state = gameReducer(state, { type: 'MAGIC_BLOCK_COLUMN', colIdx: 0 })
+    expect(state.blockedColumns).toContain(0)
     expect(state.currencies.earth).toBe(4)
 
     state = gameReducer(state, { type: 'CLAIM' })
-    state = gameReducer(state, { type: 'SPIN', multiplier: 1 })
-
-    const col0After = state.magicGrid![0].map((c) => c.icon.definitionId)
-    expect(col0After).toEqual(lockedIcons)
-    // lockedColumns are preserved through SPIN and only cleared by BEGIN_MAGIC_PHASE
-    expect(state.lockedColumns).toContain(0)
+    expect(state.blockedColumns).toEqual([])
+    expect(state.lastSpinResult!.columns).toHaveLength(5)
   })
 
   it('multiple magic actions before CLAIM all reflected in result', () => {
@@ -134,7 +129,7 @@ function GridWrapper({ initialState }: { initialState: GameState }) {
       <SlotGrid
         lastSpinResult={state.lastSpinResult}
         magicGrid={state.magicGrid}
-        lockedColumns={state.lockedColumns}
+        blockedColumns={state.blockedColumns}
         reel={state.reel}
         spinning={false}
         animate={false}
@@ -208,7 +203,7 @@ describe('US2: rendered grid changes after magic actions', () => {
         ]),
       ],
       lastSpinResult: null,
-      lockedColumns: [],
+      blockedColumns: [],
       magicCounters: { respin: 0, swap: 0, increaseValue: 0 },
       pendingMultiplier: 1,
     }
@@ -251,17 +246,16 @@ describe('US5: column click-target affordance when targeting mode active', () =>
     expect(screen.getAllByRole('button', { name: /Select column/i })).toHaveLength(5)
   })
 
-  it('column select buttons appear when lock mode is active', () => {
-    // Give earth resources so lock button is enabled (earth=0 by default)
+  it('column select buttons appear when block mode is active', () => {
     const stateWithEarth = { ...makeInitialState(), currencies: { ...makeInitialState().currencies, earth: 10 } }
     vi.mocked(loadState).mockReturnValue(stateWithEarth)
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
     act(() => { vi.advanceTimersByTime(5000) })
-    vi.mocked(loadState).mockReturnValue(null) // restore default
+    vi.mocked(loadState).mockReturnValue(null)
 
-    const lockRow = screen.getByRole('button', { name: /lock column/i })
-    fireEvent.click(lockRow)
+    const blockRow = screen.getByRole('button', { name: /block column/i })
+    fireEvent.click(blockRow)
     expect(screen.getAllByRole('button', { name: /Select column/i })).toHaveLength(5)
   })
 
@@ -294,11 +288,8 @@ describe('US2 (v0.6): SPIN/CLAIM same anchor, SpinControls always visible', () =
 
   it('SpinControls is present during magic phase', () => {
     getToMagicPhase()
-    // SpinControls renders the spin multiplier selector or animate toggle
-    // It contains at least one checkbox or button in the settings area
     const spinTab = document.querySelector('[aria-label="Slot machine grid"]')
     expect(spinTab).toBeInTheDocument()
-    // The CLAIM button is present
     expect(screen.getByRole('button', { name: /claim/i })).toBeInTheDocument()
   })
 
@@ -307,15 +298,13 @@ describe('US2 (v0.6): SPIN/CLAIM same anchor, SpinControls always visible', () =
     const claimBtn = screen.getByRole('button', { name: /claim/i })
     const respinBtn = screen.getByRole('button', { name: /respin column/i })
     const pos = claimBtn.compareDocumentPosition(respinBtn)
-    // CLAIM should come before MagicPhasePanel (respinBtn) in document order
-    // compareDocumentPosition returns DOCUMENT_POSITION_FOLLOWING (4) when respinBtn follows claimBtn
     expect(pos & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })
 
-// ─── US9: unified magic action selector ──────────────────────────────────────
+// ─── Magic action selector ────────────────────────────────────────────────────
 
-describe('US9: unified magic action selector', () => {
+describe('magic action selector', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
@@ -358,12 +347,7 @@ describe('US9: unified magic action selector', () => {
   })
 
   it('unaffordable row is not selectable (disabled)', () => {
-    // Start with no magical resources so all abilities are unaffordable
     render(<App />)
-    // Manually reach magic phase with zero elemental resources
-    // We can't easily force this via UI, so spin and check disabled state
-    // Initial state after US7 has air=10, water=10 — abilities ARE affordable.
-    // Just verify affordable rows are NOT disabled.
     fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
     act(() => { vi.advanceTimersByTime(5000) })
     const respinRow = screen.getByRole('button', { name: /respin column/i })
@@ -372,7 +356,6 @@ describe('US9: unified magic action selector', () => {
 
   it('the old toggle button strip is not rendered', () => {
     getToMagicPhase()
-    // The old strip had standalone buttons with text exactly "Respin", "Swap", "Lock", "Boost"
     const toggleButtons = screen.queryAllByRole('button').filter(
       (btn) => ['Respin', 'Swap', 'Lock', 'Boost'].includes(btn.textContent?.trim() ?? '')
     )
@@ -383,12 +366,9 @@ describe('US9: unified magic action selector', () => {
     getToMagicPhase()
     const swapRow = screen.getByRole('button', { name: /swap cells/i })
     fireEvent.click(swapRow)
-    // Before selecting first cell: no hint
     expect(screen.queryByText(/select 2nd/i)).not.toBeInTheDocument()
-    // Click first grid cell to initiate swap
     const cells = screen.getAllByRole('listitem')
     fireEvent.click(cells[0])
-    // Hint should appear in MagicPhasePanel guide
     expect(screen.getByText(/select 2nd/i)).toBeInTheDocument()
   })
 })

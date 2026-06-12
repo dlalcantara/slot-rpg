@@ -1,9 +1,10 @@
-import type { Currencies, IconDefinition } from '../game/types'
+import type { Currencies, IconDefinition, Reel } from '../game/types'
 import { ICON_CATALOG } from '../game/catalog'
 import { MarketItem } from './MarketItem'
 
 interface Props {
   currencies: Currencies
+  reel: Reel
   onBuy: (definitionId: string) => void
 }
 
@@ -14,7 +15,12 @@ function normalizedPrice(def: IconDefinition): number {
   return (TIER_WEIGHT[def.cost.currency] ?? 0) * def.cost.amount
 }
 
-export function Market({ currencies, onBuy }: Props) {
+export function Market({ currencies, reel, onBuy }: Props) {
+  const ownedCounts = new Map<string, number>()
+  for (const icon of reel.icons) {
+    ownedCounts.set(icon.definitionId, (ownedCounts.get(icon.definitionId) ?? 0) + 1)
+  }
+
   const forSale = Object.values(ICON_CATALOG)
     .filter((def) => def.cost !== null)
     .sort((a, b) => normalizedPrice(a) - normalizedPrice(b))
@@ -25,7 +31,12 @@ export function Market({ currencies, onBuy }: Props) {
       <div role="list" className="flex flex-col gap-2 max-h-64 overflow-y-auto">
         {forSale.map((def) => (
           <div key={def.definitionId} role="listitem">
-            <MarketItem def={def} currencies={currencies} onBuy={onBuy} />
+            <MarketItem
+              def={def}
+              currencies={currencies}
+              remainingPurchasable={Math.max(0, 3 - (ownedCounts.get(def.definitionId) ?? 0))}
+              onBuy={onBuy}
+            />
           </div>
         ))}
       </div>

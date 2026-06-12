@@ -4,6 +4,7 @@ import { CURRENCY_REGISTRY } from '../game/currencyRegistry'
 interface Props {
   def: IconDefinition
   currencies: Currencies
+  remainingPurchasable: number
   onBuy: (definitionId: string) => void
 }
 
@@ -11,7 +12,6 @@ function canAfford(def: IconDefinition, currencies: Currencies): boolean {
   if (!def.cost) return false
   const { currency: costKey, amount } = def.cost
   if ((currencies[costKey] ?? 0) >= amount) return true
-  // Check downward conversion chain
   const costDef = CURRENCY_REGISTRY[costKey]
   if (!costDef?.convertibleFrom) return false
   const { currency: sourceKey, rate } = costDef.convertibleFrom
@@ -30,9 +30,10 @@ function getAltPrice(costCurrency: string, amount: number): string | null {
   return null
 }
 
-export function MarketItem({ def, currencies, onBuy }: Props) {
+export function MarketItem({ def, currencies, remainingPurchasable, onBuy }: Props) {
   if (!def.cost) return null
   const affordable = canAfford(def, currencies)
+  const atCap = remainingPurchasable === 0
   const costDef = CURRENCY_REGISTRY[def.cost.currency]
   const altPrice = getAltPrice(def.cost.currency, def.cost.amount)
 
@@ -44,6 +45,7 @@ export function MarketItem({ def, currencies, onBuy }: Props) {
           <p className="text-sm font-medium">{def.label}</p>
           <p className="text-xs text-gray-400">
             {def.cost.amount} {costDef?.label ?? def.cost.currency}
+            {remainingPurchasable < 3 && ` · ${remainingPurchasable} left`}
           </p>
           {altPrice && (
             <p className="text-xs text-gray-500">{altPrice}</p>
@@ -52,7 +54,7 @@ export function MarketItem({ def, currencies, onBuy }: Props) {
       </div>
       <button
         onClick={() => onBuy(def.definitionId)}
-        disabled={!affordable}
+        disabled={!affordable || atCap}
         className="px-3 py-1 text-sm font-bold rounded-lg bg-green-700 hover:bg-green-600 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         aria-label={`Buy ${def.label}`}
       >

@@ -9,7 +9,7 @@ const emptyCurrencies = {
 
 describe('Market ordering (US6)', () => {
   it('renders items in ascending normalized-price order (cheapest first)', () => {
-    render(<Market currencies={emptyCurrencies} onBuy={() => {}} />)
+    render(<Market currencies={emptyCurrencies} reel={{ icons: [] }} onBuy={() => {}} />)
 
     const items = screen.getAllByRole('listitem')
     const labels = items.map((el) => el.textContent ?? '')
@@ -31,7 +31,7 @@ describe('Market ordering (US6)', () => {
   })
 
   it('cheapest item appears first in the list', () => {
-    render(<Market currencies={emptyCurrencies} onBuy={() => {}} />)
+    render(<Market currencies={emptyCurrencies} reel={{ icons: [] }} onBuy={() => {}} />)
     const items = screen.getAllByRole('listitem')
     // The very first item should be one of the 1-copper items
     const firstText = items[0].textContent ?? ''
@@ -40,7 +40,7 @@ describe('Market ordering (US6)', () => {
   })
 
   it('most expensive item appears last in the list', () => {
-    render(<Market currencies={emptyCurrencies} onBuy={() => {}} />)
+    render(<Market currencies={emptyCurrencies} reel={{ icons: [] }} onBuy={() => {}} />)
     const items = screen.getAllByRole('listitem')
     const lastText = items[items.length - 1].textContent ?? ''
     // Crown costs 100 gold — the most expensive item

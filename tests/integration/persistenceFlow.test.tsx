@@ -52,9 +52,10 @@ describe('persistence flow integration', () => {
     act(() => { vi.advanceTimersByTime(5000) })
     // Now in magic phase; claim to complete the round and update currency display
     fireEvent.click(screen.getByRole('button', { name: 'Claim spin result' }))
-    expect(screen.getByText('99')).toBeInTheDocument()
+    expect(screen.getByText('9')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /hard reset/i }))
-    expect(screen.getByText('100')).toBeInTheDocument()
+    // food=10, air=10, water=10 all show 10 after reset
+    expect(screen.getAllByText('10').length).toBeGreaterThan(0)
   })
 })

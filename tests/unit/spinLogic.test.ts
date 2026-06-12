@@ -57,48 +57,16 @@ describe('computeSpin', () => {
   })
 })
 
-// ─── drawColumn with disabledIconIds (US1) ────────────────────────────────────
-
-describe('drawColumn with disabledIconIds', () => {
-  it('excludes disabled icon ids from drawn results', () => {
-    const reel: Reel = {
-      icons: [
-        { id: 'apple-1', definitionId: 'apple' },
-        { id: 'apple-2', definitionId: 'apple' },
-        { id: 'copper-1', definitionId: 'copper' },
-        { id: 'copper-2', definitionId: 'copper' },
-        { id: 'copper-3', definitionId: 'copper' },
-        { id: 'copper-4', definitionId: 'copper' },
-      ],
-    }
-    const disabledIconIds = ['apple-1', 'apple-2']
-
-    // Run many times to avoid false positives from randomness
-    for (let i = 0; i < 50; i++) {
-      const column = drawColumn(reel, disabledIconIds)
-      column.forEach((icon) => {
-        expect(disabledIconIds).not.toContain(icon.id)
-      })
-    }
-  })
-
-  it('falls back to full reel when all icons are disabled (safety fallback)', () => {
-    const reel: Reel = {
-      icons: [
-        { id: 'apple-1', definitionId: 'apple' },
-        { id: 'apple-2', definitionId: 'apple' },
-        { id: 'apple-3', definitionId: 'apple' },
-      ],
-    }
-    const disabledIconIds = ['apple-1', 'apple-2', 'apple-3']
-    const column = drawColumn(reel, disabledIconIds)
-    expect(column).toHaveLength(3)
-    column.forEach((icon) => expect(icon.definitionId).toBe('apple'))
-  })
-
-  it('uses full pool when disabledIconIds is empty', () => {
+describe('drawColumn', () => {
+  it('uses icons from the reel', () => {
     const reel = makeReel(['apple', 'copper', 'blank', 'apple', 'copper'])
-    const column = drawColumn(reel, [])
+    const column = drawColumn(reel)
+    expect(column).toHaveLength(3)
+  })
+
+  it('produces 3 icons', () => {
+    const reel = makeReel(['apple', 'copper', 'blank'])
+    const column = drawColumn(reel)
     expect(column).toHaveLength(3)
   })
 })
@@ -141,7 +109,7 @@ describe('calculatePayouts', () => {
     expect(calculatePayouts(columns)).toHaveLength(0)
   })
 
-  it('triple-apple contributes value 3 per column', () => {
+  it('triple-apple contributes value 2 per column', () => {
     const columns = makeColumns([
       ['triple-apple'],
       ['triple-apple'],
@@ -152,6 +120,41 @@ describe('calculatePayouts', () => {
     const payouts = calculatePayouts(columns)
     const foodPayout = payouts.find((p) => p.currency === 'food')
     expect(foodPayout).toBeDefined()
-    expect(foodPayout!.amount).toBe(243) // 3^5
+    expect(foodPayout!.amount).toBe(32) // 2^5
+  })
+})
+
+// ─── calculatePayouts with requiredColumnCount (T007) ─────────────────────────
+
+describe('calculatePayouts with requiredColumnCount', () => {
+  it('icon in 4 of 4 active columns wins when requiredColumnCount=4', () => {
+    const columns = makeColumns([
+      ['apple'], ['apple'], ['apple'], ['apple'],
+    ])
+    const payouts = calculatePayouts(columns, undefined, 4)
+    expect(payouts.find((p) => p.currency === 'food')).toBeDefined()
+  })
+
+  it('icon in 3 of 4 active columns → no payout when requiredColumnCount=4', () => {
+    const columns = makeColumns([
+      ['apple'], ['apple'], ['apple'], ['blank'],
+    ])
+    const payouts = calculatePayouts(columns, undefined, 4)
+    expect(payouts.find((p) => p.currency === 'food')).toBeUndefined()
+  })
+
+  it('defaults to columns.length as requiredColumnCount (5-column behavior preserved)', () => {
+    const fiveAppleCols = makeColumns([
+      ['apple'], ['apple'], ['apple'], ['apple'], ['apple'],
+    ])
+    const payoutsFive = calculatePayouts(fiveAppleCols)
+    expect(payoutsFive.find((p) => p.currency === 'food')).toBeDefined()
+
+    // 4 of 5 columns → no payout with default
+    const fourAppleCols = makeColumns([
+      ['apple'], ['apple'], ['apple'], ['apple'], ['blank'],
+    ])
+    const payoutsFour = calculatePayouts(fourAppleCols)
+    expect(payoutsFour.find((p) => p.currency === 'food')).toBeUndefined()
   })
 })

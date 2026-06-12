@@ -3,12 +3,13 @@ import type { PlayerSettings, SpinMultiplier } from '../game/types'
 interface Props {
   settings: PlayerSettings
   spinning: boolean
+  isMagicPhase: boolean
   onSettingsChange: (patch: Partial<PlayerSettings>) => void
 }
 
 const MULTIPLIERS: SpinMultiplier[] = [1, 10, 100]
 
-export function SpinControls({ settings, spinning, onSettingsChange }: Props) {
+export function SpinControls({ settings, spinning, isMagicPhase, onSettingsChange }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-3 px-1">
       {/* Multiplier toggle */}
@@ -17,7 +18,7 @@ export function SpinControls({ settings, spinning, onSettingsChange }: Props) {
           <button
             key={m}
             onClick={() => onSettingsChange({ spinMultiplier: m })}
-            disabled={spinning}
+            disabled={spinning || isMagicPhase}
             className={`px-3 py-1 rounded-lg text-sm font-bold transition-colors disabled:opacity-40 ${
               settings.spinMultiplier === m
                 ? 'bg-indigo-600 text-white'

@@ -17,6 +17,7 @@ const copperIcons: Icon[] = [
 
 const reelIcons: Icon[] = [{ id: 'r1', definitionId: 'apple' }]
 const emptyOverrides = new Map<string, number>()
+const emptyHighlights = new Map<string, 'green' | 'yellow'>()
 
 function renderColumn(overrides: Partial<Parameters<typeof ReelColumn>[0]> = {}) {
   const defaults = {
@@ -26,7 +27,8 @@ function renderColumn(overrides: Partial<Parameters<typeof ReelColumn>[0]> = {})
     spinning: false,
     animate: true,
     colIndex: 0,
-    locked: false,
+    blocked: false,
+    highlights: emptyHighlights,
     isMagicPhase: false,
     respinToken: 0,
     isTargetingMode: false,
@@ -55,7 +57,8 @@ describe('ReelColumn icon sync (US2)', () => {
         spinning={false}
         animate={true}
         colIndex={0}
-        locked={false}
+        blocked={false}
+        highlights={emptyHighlights}
         isMagicPhase={false}
         respinToken={0}
         isTargetingMode={false}
@@ -70,7 +73,6 @@ describe('ReelColumn icon sync (US2)', () => {
 
   it('does not sync icons when animation is in flight', () => {
     const { rerender } = renderColumn({ icons: appleIcons, spinning: true, animate: true })
-    // Animation is running; icon changes should not stomp the shuffle
     rerender(
       <ReelColumn
         icons={copperIcons}
@@ -79,7 +81,8 @@ describe('ReelColumn icon sync (US2)', () => {
         spinning={true}
         animate={true}
         colIndex={0}
-        locked={false}
+        blocked={false}
+        highlights={emptyHighlights}
         isMagicPhase={false}
         respinToken={0}
         isTargetingMode={false}
@@ -87,8 +90,6 @@ describe('ReelColumn icon sync (US2)', () => {
         onColumnClick={vi.fn()}
       />
     )
-    // Still animating — should not have settled on copper yet
-    // After animation stops (5000ms), it will settle on the current icons prop (copper)
     act(() => { vi.advanceTimersByTime(5000) })
     expect(screen.getAllByText('Copper')).toHaveLength(3)
   })
@@ -106,7 +107,6 @@ describe('ReelColumn respin animation (US3)', () => {
 
     expect(screen.getAllByText('Apple')).toHaveLength(3)
 
-    // Trigger respin on column — new icons arrive simultaneously
     rerender(
       <ReelColumn
         icons={copperIcons}
@@ -115,7 +115,8 @@ describe('ReelColumn respin animation (US3)', () => {
         spinning={false}
         animate={true}
         colIndex={0}
-        locked={false}
+        blocked={false}
+        highlights={emptyHighlights}
         isMagicPhase={false}
         respinToken={1}
         isTargetingMode={false}
@@ -125,7 +126,6 @@ describe('ReelColumn respin animation (US3)', () => {
       />
     )
 
-    // After animation completes, should show new icons (Copper)
     act(() => { vi.advanceTimersByTime(2000) })
     expect(screen.getAllByText('Copper')).toHaveLength(3)
   })
@@ -143,7 +143,8 @@ describe('ReelColumn respin animation (US3)', () => {
         spinning={false}
         animate={false}
         colIndex={0}
-        locked={false}
+        blocked={false}
+        highlights={emptyHighlights}
         isMagicPhase={false}
         respinToken={1}
         isTargetingMode={false}
@@ -152,7 +153,6 @@ describe('ReelColumn respin animation (US3)', () => {
       />
     )
 
-    // Immediate update — no timer needed
     expect(screen.queryAllByText('Apple')).toHaveLength(0)
     expect(screen.getAllByText('Copper')).toHaveLength(3)
   })
@@ -165,7 +165,6 @@ describe('ReelColumn respin animation height (US4 v0.6)', () => {
   afterEach(() => vi.useRealTimers())
 
   it('during respin animation the displayed icon count equals icons.length (3), not reelIcons.length', () => {
-    // reelIcons has 8 icons to simulate a larger reel; column should only show 3
     const largeReelIcons: Icon[] = Array.from({ length: 8 }, (_, i) => ({
       id: `r${i}`,
       definitionId: 'apple',
@@ -179,7 +178,6 @@ describe('ReelColumn respin animation height (US4 v0.6)', () => {
       respinToken: 0,
     })
 
-    // Trigger respin by incrementing respinToken
     rerender(
       <ReelColumn
         icons={appleIcons}
@@ -188,7 +186,8 @@ describe('ReelColumn respin animation height (US4 v0.6)', () => {
         spinning={false}
         animate={true}
         colIndex={0}
-        locked={false}
+        blocked={false}
+        highlights={emptyHighlights}
         isMagicPhase={false}
         respinToken={1}
         isTargetingMode={false}
@@ -197,25 +196,23 @@ describe('ReelColumn respin animation height (US4 v0.6)', () => {
       />
     )
 
-    // Mid-animation: advance timer part-way so setInterval fires
     act(() => { vi.advanceTimersByTime(400) })
 
-    // Should display exactly 3 icons (icons.length), not 8 (reelIcons.length)
     const listItems = document.querySelectorAll('[role="listitem"]')
     expect(listItems.length).toBe(3)
   })
 })
 
-// ─── US4: locked column indicator ───────────────────────────────────────────
+// ─── Blocked column indicator ───────────────────────────────────────────────
 
-describe('ReelColumn locked indicator (US4)', () => {
-  it('locked column renders a persistent locked indicator', () => {
-    renderColumn({ locked: true })
-    expect(screen.getByRole('status', { name: /locked/i })).toBeInTheDocument()
+describe('ReelColumn blocked indicator', () => {
+  it('blocked column renders a 🚫 blocked indicator', () => {
+    renderColumn({ blocked: true })
+    expect(screen.getByRole('status', { name: /blocked/i })).toBeInTheDocument()
   })
 
-  it('unlocked column does not render the locked indicator', () => {
-    renderColumn({ locked: false })
-    expect(screen.queryByRole('status', { name: /locked/i })).not.toBeInTheDocument()
+  it('unblocked column does not render the blocked indicator', () => {
+    renderColumn({ blocked: false })
+    expect(screen.queryByRole('status', { name: /blocked/i })).not.toBeInTheDocument()
   })
 })

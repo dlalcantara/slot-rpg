@@ -14,8 +14,8 @@ describe('persistence', () => {
     const raw = localStorage.getItem('slot-rpg-state')
     expect(raw).not.toBeNull()
     const parsed = JSON.parse(raw!)
-    expect(parsed.version).toBe(5)
-    expect(parsed.currencies.food).toBe(100)
+    expect(parsed.version).toBe(6)
+    expect(parsed.currencies.food).toBe(10)
   })
 
   it('loadState returns parsed GameState when key present', () => {
@@ -23,8 +23,8 @@ describe('persistence', () => {
     saveState(state)
     const loaded = loadState()
     expect(loaded).not.toBeNull()
-    expect(loaded!.version).toBe(5)
-    expect(loaded!.currencies.food).toBe(100)
+    expect(loaded!.version).toBe(6)
+    expect(loaded!.currencies.food).toBe(10)
   })
 
   it('loadState returns null when key absent', () => {
@@ -70,16 +70,30 @@ describe('persistence', () => {
     expect(loaded!.gameLog[0].spinNumber).toBe(1)
   })
 
-  it('migrates v4 save to v5 by adding disabledIconIds: []', () => {
-    const v4State = { ...makeInitialState(), version: 4 }
-    // Remove disabledIconIds to simulate a real v4 save
-    const { disabledIconIds: _stripped, ...v4StateWithout } = v4State
-    void _stripped
-    localStorage.setItem('slot-rpg-state', JSON.stringify(v4StateWithout))
+  it('migrates v5 save to v6 by stripping disabledIconIds/lockedColumns and adding blockedColumns', () => {
+    const v5State = {
+      version: 5,
+      reel: { icons: [] },
+      currencies: { food: 100, copper: 0, silver: 0, gold: 0, crowns: 0, air: 10, water: 10, earth: 0, fire: 0 },
+      phase: 'market',
+      lastSpinResult: null,
+      spinCount: 0,
+      settings: DEFAULT_SETTINGS,
+      gameLog: [],
+      magicGrid: null,
+      lockedColumns: [1, 2],
+      disabledIconIds: ['some-id'],
+      magicCounters: { respin: 0, swap: 0, increaseValue: 0 },
+      masterOfElements: false,
+      pendingMultiplier: 1,
+    }
+    localStorage.setItem('slot-rpg-state', JSON.stringify(v5State))
     const loaded = loadState()
     expect(loaded).not.toBeNull()
-    expect(loaded!.version).toBe(5)
-    expect(loaded!.disabledIconIds).toEqual([])
+    expect(loaded!.version).toBe(6)
+    expect(loaded!.blockedColumns).toEqual([])
+    expect('lockedColumns' in loaded!).toBe(false)
+    expect('disabledIconIds' in loaded!).toBe(false)
   })
 
   it('discards state with version < 4 (no migration)', () => {

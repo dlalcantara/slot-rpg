@@ -2,7 +2,6 @@ import { useReducer, useEffect, useState, useCallback, useRef } from 'react'
 import { gameReducer } from './game/reducer'
 import { loadState, saveState } from './game/persistence'
 import { makeInitialState } from './game/initialState'
-import { isNotableResult } from './game/notableResult'
 import { SlotGrid } from './components/SlotGrid'
 import { CurrencyDisplay } from './components/CurrencyDisplay'
 import { SpinButton } from './components/SpinButton'
@@ -13,10 +12,10 @@ import { GameOverScreen } from './components/GameOverScreen'
 import { WinModal } from './components/WinModal'
 import { HardResetButton } from './components/HardResetButton'
 import { ReelView } from './components/ReelView'
-import { SpinResultModal } from './components/SpinResultModal'
+import { SpinResultToast } from './components/SpinResultToast'
 import { MagicPhasePanel } from './components/MagicPhasePanel'
 import { CheatPanel } from './components/CheatPanel'
-import type { Currencies, MagicMode } from './game/types'
+import type { Currencies, MagicMode, SpinResult } from './game/types'
 
 type ActiveTab = 'reel' | 'spin' | 'market'
 
@@ -31,7 +30,8 @@ export default function App() {
   const [respinTokens, setRespinTokens] = useState<number[]>([0, 0, 0, 0, 0])
   const [magicMode, setMagicMode] = useState<MagicMode>(null)
   const [swapFrom, setSwapFrom] = useState<{ col: number; row: number } | null>(null)
-  const [showModal, setShowModal] = useState(false)
+  const [toastResult, setToastResult] = useState<SpinResult | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showMasterOfElements, setShowMasterOfElements] = useState(false)
   const [showCheat, setShowCheat] = useState(false)
   const titleClickCountRef = useRef(0)
@@ -44,10 +44,10 @@ export default function App() {
   }, [state])
 
   useEffect(() => {
-    if (!spinning && !showModal) {
+    if (!spinning && !toastResult) {
       setDisplayedCurrencies(state.currencies)
     }
-  }, [state.currencies, spinning, showModal])
+  }, [state.currencies, spinning, toastResult])
 
   useEffect(() => {
     if (state.masterOfElements && !prevMasterRef.current) {
@@ -55,6 +55,18 @@ export default function App() {
     }
     prevMasterRef.current = state.masterOfElements
   }, [state.masterOfElements])
+
+  // Show toast when lastSpinResult changes after CLAIM
+  useEffect(() => {
+    if (state.phase !== 'magic' && state.lastSpinResult) {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      setToastResult(state.lastSpinResult)
+      toastTimerRef.current = setTimeout(() => {
+        setToastResult(null)
+        setDisplayedCurrencies(state.currencies)
+      }, 3000)
+    }
+  }, [state.lastSpinResult]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSpin = useCallback(() => {
     if (spinning) return
@@ -76,27 +88,14 @@ export default function App() {
     dispatch({ type: 'CLAIM' })
   }, [])
 
-  useEffect(() => {
-    if (state.phase !== 'magic' && !spinning) {
-      const notable = isNotableResult(prevCurrenciesRef.current, state.currencies)
-      if (notable) {
-        setShowModal(true)
-      }
-    }
-  }, [state.phase]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleModalDismiss = useCallback(() => {
-    setShowModal(false)
-    setDisplayedCurrencies(state.currencies)
-  }, [state.currencies])
-
   const handleBuy = useCallback((iconDefinitionId: string) => {
     dispatch({ type: 'BUY_ICON', iconDefinitionId })
   }, [])
 
   const handleReset = useCallback(() => {
     setSpinning(false)
-    setShowModal(false)
+    setToastResult(null)
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setShowMasterOfElements(false)
     setMagicMode(null)
     setSwapFrom(null)
@@ -109,7 +108,7 @@ export default function App() {
     dispatch({ type: 'CONTINUE_AFTER_WIN' })
   }, [])
 
-  // US8: secret cheat trigger — click title 5× quickly
+  // Secret cheat trigger — click title 5× quickly
   const titleClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const handleTitleClick = useCallback(() => {
     titleClickCountRef.current += 1
@@ -165,8 +164,7 @@ export default function App() {
         <div className={activeTab === 'reel' ? '' : 'hidden'}>
           <ReelView
             reel={state.reel}
-            disabledIconIds={state.disabledIconIds}
-            onToggleIcon={(iconId) => dispatch({ type: 'TOGGLE_ICON', iconId })}
+            onPrestige={(keepDefinitionIds) => dispatch({ type: 'PRESTIGE', keepDefinitionIds })}
           />
         </div>
 
@@ -174,7 +172,7 @@ export default function App() {
           <SlotGrid
             lastSpinResult={state.lastSpinResult}
             magicGrid={state.magicGrid}
-            lockedColumns={state.lockedColumns}
+            blockedColumns={state.blockedColumns}
             reel={state.reel}
             spinning={spinning}
             animate={state.settings.animate}
@@ -197,6 +195,7 @@ export default function App() {
             <SpinControls
               settings={state.settings}
               spinning={spinning}
+              isMagicPhase={isMagicPhase}
               onSettingsChange={(patch) => dispatch({ type: 'UPDATE_SETTINGS', patch })}
             />
             {isMagicPhase ? (
@@ -211,7 +210,8 @@ export default function App() {
                 <MagicPhasePanel
                   currencies={state.currencies}
                   magicCounters={state.magicCounters}
-                  lockedColumns={state.lockedColumns}
+                  blockedColumns={state.blockedColumns}
+                  multiplier={state.pendingMultiplier}
                   magicMode={magicMode}
                   swapFrom={swapFrom}
                   onSelectMode={setMagicMode}
@@ -231,16 +231,14 @@ export default function App() {
         </div>
 
         <div className={activeTab === 'market' ? '' : 'hidden'}>
-          <Market currencies={state.currencies} onBuy={handleBuy} />
+          <Market currencies={state.currencies} reel={state.reel} onBuy={handleBuy} />
         </div>
 
         {state.phase === 'gameover' && <GameOverScreen onReset={handleReset} />}
         {state.phase === 'win' && (
           <WinModal onContinue={handleContinue} onReset={handleReset} />
         )}
-        {showModal && state.lastSpinResult && (
-          <SpinResultModal result={state.lastSpinResult} onDismiss={handleModalDismiss} />
-        )}
+        {toastResult && <SpinResultToast result={toastResult} />}
         {showMasterOfElements && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-gray-800 rounded-2xl border border-yellow-400 p-6 max-w-sm w-full text-center space-y-4">
