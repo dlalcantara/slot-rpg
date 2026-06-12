@@ -1,0 +1,19 @@
+Version 0.5 Visual Fixes
+
+Currently, at the end of the slot's columns animation it displays empty cells, and then it changes to the resulting values.  Instead, animation should end with the resulting contents displayed (does not display empty cells).
+
+When using magic abilities like air, water: It should visually reflect the changes on screen. Currently the results are computed correctly, but the resulting grid is not displayed to the user.
+
+When using respin ability (air), if the animation is toggled on, the selected column should respin.
+
+When using the magic ability earth.  It should be clear to the user that the column is locked.
+
+It is currently difficult for the user to click on a column when using air or earth abilities.  Improve the user experience by giving the user a clear indication what location they should click to affect the column.
+
+Change the costs of the elements in the market.  Air and water should be worth 1 copper.  Earth should be worth 1 silver.  Reorder the market such that the items are in ascending order.
+
+The starting deck should contain 1 air, 1 water, 1 food, 1 copper.
+
+Starting resources should be 10 air, 10 water, 100 food.
+
+Introduce a way to "cheat", such that a player can modify the resources.  This will be used for dev testing, but can be retained as an easter egg.
