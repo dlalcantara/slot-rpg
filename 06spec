@@ -1,0 +1,22 @@
+Version 0.6
+
+Enhancement:
+In the Reels tab: 
+Users can disable/enable icons to be included in the SPIN.  Users can only disable icons if there are at least 13 enabled icons, meaning the user can not disable icons to go below 12 enabled icons.  When the user has not yet bought enough icons (reel starts at 4 icons), they can not perform disable.
+
+SPIN and CLAIM should take up the exact same visual location (to minimize mouse movements).  
+To do so, during the magic phase: retain display of the toggles above the SPIN button; swap the displayed order of the CLAIM and Magic Phase controls.
+
+BugFix: Boost Value should only enhance the value of the specific clicked cell in the display.  Appears to be caused by boosting the base reel value and it affecting other columns.
+
+BugFix: Boost Value should boost the cell's value by 1 each activation.  Currently, the second activation boosts the value by 2, the third activation boosts the value by 3 so on.  
+
+BugFix: The animation for Air Spin results in a visual column of growing size
+
+BugFix: Locked columns should not animate the Spinning
+
+BugFix: Visual for Lock should not result in visual offsetting Columns.  Make the locked indicator the same width as the column icons (or smaller).  Place it under the column.  This should result in a consistent layout for the columns when locked.
+
+BugFix: Master of Elements does not appear to trigger when Boost Value is used.
+
+BugFix: When player has 0 copper, but some silver or gold.  They should be able to buy 1 copper valued items.  Same for silver cost items when player has 0 silver but some gold.
