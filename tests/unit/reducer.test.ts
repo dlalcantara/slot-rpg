@@ -462,8 +462,8 @@ describe('BUY_ICON action', () => {
     expect(next.reel.icons.length).toBe(state.reel.icons.length)
   })
 
-  it('purchases elemental icon with correct cost (air costs 10 copper)', () => {
-    const state = stateWithCurrencies({ copper: 10 })
+  it('purchases elemental icon with correct cost (air costs 1 copper)', () => {
+    const state = stateWithCurrencies({ copper: 1 })
     const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'air' })
     expect(next.currencies.copper).toBe(0)
     expect(next.reel.icons.length).toBe(state.reel.icons.length + 1)
@@ -522,5 +522,59 @@ describe('UPDATE_SETTINGS action', () => {
     const next = gameReducer(state, { type: 'UPDATE_SETTINGS', patch: { autoConvert: false } })
     expect(next.settings.autoConvert).toBe(false)
     expect(next.settings.animate).toBe(true)
+  })
+})
+
+// ─── SET_CURRENCY (cheat) ─────────────────────────────────────────────────────
+
+describe('SET_CURRENCY action', () => {
+  it('sets a currency to the given value', () => {
+    const state = stateWithCurrencies({ food: 10 })
+    const next = gameReducer(state, { type: 'SET_CURRENCY', currency: 'food', amount: 500 })
+    expect(next.currencies.food).toBe(500)
+  })
+
+  it('allows setting a currency to 0', () => {
+    const state = stateWithCurrencies({ air: 5 })
+    const next = gameReducer(state, { type: 'SET_CURRENCY', currency: 'air', amount: 0 })
+    expect(next.currencies.air).toBe(0)
+  })
+
+  it('ignores negative amount — state unchanged', () => {
+    const state = stateWithCurrencies({ food: 10 })
+    const next = gameReducer(state, { type: 'SET_CURRENCY', currency: 'food', amount: -5 })
+    expect(next).toBe(state)
+  })
+
+  it('ignores NaN amount — state unchanged', () => {
+    const state = stateWithCurrencies({ food: 10 })
+    const next = gameReducer(state, { type: 'SET_CURRENCY', currency: 'food', amount: NaN })
+    expect(next).toBe(state)
+  })
+
+  it('ignores Infinity — state unchanged', () => {
+    const state = stateWithCurrencies({ food: 10 })
+    const next = gameReducer(state, { type: 'SET_CURRENCY', currency: 'food', amount: Infinity })
+    expect(next).toBe(state)
+  })
+
+  it('floors non-integer amount', () => {
+    const state = stateWithCurrencies({ food: 10 })
+    const next = gameReducer(state, { type: 'SET_CURRENCY', currency: 'food', amount: 12.9 })
+    expect(next.currencies.food).toBe(12)
+  })
+
+  it('ignores unknown currency — state unchanged', () => {
+    const state = stateWithCurrencies({ food: 10 })
+    // @ts-expect-error testing unknown key
+    const next = gameReducer(state, { type: 'SET_CURRENCY', currency: 'notACurrency', amount: 5 })
+    expect(next).toBe(state)
+  })
+
+  it('does not change phase or other currencies', () => {
+    const state = stateWithCurrencies({ food: 10, air: 3 })
+    const next = gameReducer(state, { type: 'SET_CURRENCY', currency: 'food', amount: 200 })
+    expect(next.phase).toBe(state.phase)
+    expect(next.currencies.air).toBe(state.currencies.air)
   })
 })

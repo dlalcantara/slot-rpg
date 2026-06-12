@@ -114,6 +114,8 @@ export interface GameState {
   pendingMultiplier: SpinMultiplier
 }
 
+export type MagicMode = 'respin' | 'swap' | 'lock' | 'increaseValue' | null
+
 export type GameAction =
   | { type: 'SPIN'; multiplier: SpinMultiplier }
   | { type: 'BEGIN_MAGIC_PHASE' }
@@ -127,3 +129,4 @@ export type GameAction =
   | { type: 'CONTINUE_AFTER_WIN' }
   | { type: 'RESTORE_STATE'; savedState: GameState }
   | { type: 'UPDATE_SETTINGS'; patch: Partial<PlayerSettings> }
+  | { type: 'SET_CURRENCY'; currency: CurrencyKey; amount: number }

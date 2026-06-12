@@ -7,16 +7,16 @@ describe('elemental icon definitions', () => {
     expect(ICON_CATALOG[id]).toBeDefined()
   })
 
-  it('air costs 10 copper', () => {
-    expect(ICON_CATALOG.air.cost).toEqual({ currency: 'copper', amount: 10 })
+  it('air costs 1 copper', () => {
+    expect(ICON_CATALOG.air.cost).toEqual({ currency: 'copper', amount: 1 })
   })
 
-  it('water costs 1 silver', () => {
-    expect(ICON_CATALOG.water.cost).toEqual({ currency: 'silver', amount: 1 })
+  it('water costs 1 copper', () => {
+    expect(ICON_CATALOG.water.cost).toEqual({ currency: 'copper', amount: 1 })
   })
 
-  it('earth costs 10 silver', () => {
-    expect(ICON_CATALOG.earth.cost).toEqual({ currency: 'silver', amount: 10 })
+  it('earth costs 1 silver', () => {
+    expect(ICON_CATALOG.earth.cost).toEqual({ currency: 'silver', amount: 1 })
   })
 
   it('fire costs 1 gold', () => {
@@ -37,7 +37,15 @@ describe('elemental currency definitions', () => {
     expect(CURRENCY_REGISTRY[key]).toBeDefined()
   })
 
-  it.each(['air', 'water', 'earth', 'fire'])('%s starts at 0', (key) => {
+  it('air starts at 10', () => {
+    expect(CURRENCY_REGISTRY.air.startingAmount).toBe(10)
+  })
+
+  it('water starts at 10', () => {
+    expect(CURRENCY_REGISTRY.water.startingAmount).toBe(10)
+  })
+
+  it.each(['earth', 'fire'])('%s starts at 0', (key) => {
     expect(CURRENCY_REGISTRY[key].startingAmount).toBe(0)
   })
 

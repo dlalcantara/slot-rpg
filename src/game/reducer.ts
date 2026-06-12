@@ -300,6 +300,18 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return newState
     }
 
+    case 'SET_CURRENCY': {
+      const { currency, amount } = action
+      if (!(currency in state.currencies)) return state
+      if (!isFinite(amount) || amount < 0) return state
+      const newState: GameState = {
+        ...state,
+        currencies: { ...state.currencies, [currency]: Math.floor(amount) },
+      }
+      saveState(newState)
+      return newState
+    }
+
     default:
       return state
   }

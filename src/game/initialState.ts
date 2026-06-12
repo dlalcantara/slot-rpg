@@ -18,10 +18,10 @@ export function makeInitialState(): GameState {
     version: 4,
     reel: {
       icons: [
-        { id: stableId('blank'), definitionId: 'blank' },
+        { id: stableId('air'), definitionId: 'air' },
+        { id: stableId('water'), definitionId: 'water' },
         { id: stableId('apple'), definitionId: 'apple' },
         { id: stableId('copper'), definitionId: 'copper' },
-        { id: stableId('air'), definitionId: 'air' },
       ],
     },
     currencies: buildInitialCurrencies(),

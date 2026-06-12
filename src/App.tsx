@@ -15,7 +15,8 @@ import { HardResetButton } from './components/HardResetButton'
 import { ReelView } from './components/ReelView'
 import { SpinResultModal } from './components/SpinResultModal'
 import { MagicPhasePanel } from './components/MagicPhasePanel'
-import type { Currencies } from './game/types'
+import { CheatPanel } from './components/CheatPanel'
+import type { Currencies, MagicMode } from './game/types'
 
 type ActiveTab = 'reel' | 'spin' | 'market'
 
@@ -27,8 +28,13 @@ export default function App() {
   const [state, dispatch] = useReducer(gameReducer, undefined, loadOrInit)
   const [spinning, setSpinning] = useState(false)
   const [activeTab, setActiveTab] = useState<ActiveTab>('spin')
+  const [respinTokens, setRespinTokens] = useState<number[]>([0, 0, 0, 0, 0])
+  const [magicMode, setMagicMode] = useState<MagicMode>(null)
+  const [swapFrom, setSwapFrom] = useState<{ col: number; row: number } | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [showMasterOfElements, setShowMasterOfElements] = useState(false)
+  const [showCheat, setShowCheat] = useState(false)
+  const titleClickCountRef = useRef(0)
   const [displayedCurrencies, setDisplayedCurrencies] = useState<Currencies>(() => loadOrInit().currencies)
   const prevCurrenciesRef = useRef<Currencies>(state.currencies)
   const prevMasterRef = useRef<boolean>(state.masterOfElements)
@@ -43,7 +49,6 @@ export default function App() {
     }
   }, [state.currencies, spinning, showModal])
 
-  // Detect Master of Elements becoming true
   useEffect(() => {
     if (state.masterOfElements && !prevMasterRef.current) {
       setShowMasterOfElements(true)
@@ -60,16 +65,17 @@ export default function App() {
 
   const handleSpinDone = useCallback(() => {
     setSpinning(false)
+    setMagicMode(null)
+    setSwapFrom(null)
     dispatch({ type: 'BEGIN_MAGIC_PHASE' })
   }, [])
 
   const handleClaim = useCallback(() => {
+    setMagicMode(null)
+    setSwapFrom(null)
     dispatch({ type: 'CLAIM' })
-    // Notable result check happens via useEffect watching phase transition
   }, [])
 
-  // After CLAIM: state.phase transitions magic → market/gameover/win
-  // At that point state.currencies has the payout applied
   useEffect(() => {
     if (state.phase !== 'magic' && !spinning) {
       const notable = isNotableResult(prevCurrenciesRef.current, state.currencies)
@@ -92,6 +98,8 @@ export default function App() {
     setSpinning(false)
     setShowModal(false)
     setShowMasterOfElements(false)
+    setMagicMode(null)
+    setSwapFrom(null)
     const fresh = makeInitialState()
     setDisplayedCurrencies(fresh.currencies)
     dispatch({ type: 'HARD_RESET' })
@@ -99,6 +107,20 @@ export default function App() {
 
   const handleContinue = useCallback(() => {
     dispatch({ type: 'CONTINUE_AFTER_WIN' })
+  }, [])
+
+  // US8: secret cheat trigger — click title 5× quickly
+  const titleClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleTitleClick = useCallback(() => {
+    titleClickCountRef.current += 1
+    if (titleClickCountRef.current >= 5) {
+      setShowCheat(true)
+      titleClickCountRef.current = 0
+      if (titleClickTimerRef.current) clearTimeout(titleClickTimerRef.current)
+      return
+    }
+    if (titleClickTimerRef.current) clearTimeout(titleClickTimerRef.current)
+    titleClickTimerRef.current = setTimeout(() => { titleClickCountRef.current = 0 }, 1500)
   }, [])
 
   const tabs: { id: ActiveTab; label: string }[] = [
@@ -113,7 +135,12 @@ export default function App() {
     <div className="min-h-screen bg-gray-900 flex items-start justify-center">
       <div className="w-full max-w-lg mx-auto p-2 space-y-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-100">Slot RPG</h1>
+          <h1
+            className="text-xl font-bold text-gray-100 select-none cursor-default"
+            onClick={handleTitleClick}
+          >
+            Slot RPG
+          </h1>
           <HardResetButton onReset={handleReset} />
         </div>
 
@@ -149,7 +176,18 @@ export default function App() {
             animate={state.settings.animate}
             onSpinDone={handleSpinDone}
             isMagicPhase={isMagicPhase}
-            onMagicAction={(action) => dispatch(action)}
+            magicMode={magicMode}
+            swapFrom={swapFrom}
+            respinTokens={respinTokens}
+            onModeChange={setMagicMode}
+            onSwapFrom={setSwapFrom}
+            onMagicAction={(action) => {
+              if (action.type === 'MAGIC_RESPIN') {
+                const idx = action.colIdx
+                setRespinTokens((prev) => prev.map((t, i) => (i === idx ? t + 1 : t)))
+              }
+              dispatch(action)
+            }}
           />
           <div className="mt-3 space-y-2">
             {isMagicPhase ? (
@@ -157,6 +195,9 @@ export default function App() {
                 currencies={state.currencies}
                 magicCounters={state.magicCounters}
                 lockedColumns={state.lockedColumns}
+                magicMode={magicMode}
+                swapFrom={swapFrom}
+                onSelectMode={setMagicMode}
               />
             ) : (
               <SpinControls
@@ -213,6 +254,13 @@ export default function App() {
               </button>
             </div>
           </div>
+        )}
+        {showCheat && (
+          <CheatPanel
+            currencies={state.currencies}
+            onSetCurrency={(currency, amount) => dispatch({ type: 'SET_CURRENCY', currency, amount })}
+            onClose={() => setShowCheat(false)}
+          />
         )}
       </div>
     </div>

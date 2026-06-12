@@ -11,6 +11,8 @@ interface Props {
   colIndex: number
   locked: boolean
   isMagicPhase: boolean
+  respinToken: number
+  isTargetingMode: boolean
   onDone?: () => void
   onCellClick: (rowIdx: number) => void
   onColumnClick: () => void
@@ -25,6 +27,8 @@ export function ReelColumn({
   colIndex,
   locked,
   isMagicPhase,
+  respinToken,
+  isTargetingMode,
   onDone,
   onCellClick,
   onColumnClick,
@@ -34,6 +38,7 @@ export function ReelColumn({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Global spin animation
   useEffect(() => {
     if (!spinning) {
       if (intervalRef.current) clearInterval(intervalRef.current)
@@ -83,16 +88,68 @@ export function ReelColumn({
     }
   }, [spinning]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // US2: re-sync display when icons prop changes and no animation is running
+  useEffect(() => {
+    if (!animating) {
+      setDisplayIcons(icons)
+    }
+  }, [icons, animating])
+
+  // US3: per-column respin animation pulse
+  const respinIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const respinStopRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (respinToken === 0) return // initial mount, no animation
+    if (!animate) return // animate off: US2 effect handles immediate update
+
+    const pool = reelIcons.length > 0 ? reelIcons : icons
+    setAnimating(true)
+    respinIntervalRef.current = setInterval(() => {
+      setDisplayIcons(pool.map(() => pool[Math.floor(Math.random() * pool.length)]))
+    }, 200)
+
+    respinStopRef.current = setTimeout(() => {
+      if (respinIntervalRef.current) clearInterval(respinIntervalRef.current)
+      respinIntervalRef.current = null
+      setAnimating(false)
+      // US2 effect will sync displayIcons to icons (new column) on animating→false
+    }, 1000)
+
+    return () => {
+      if (respinIntervalRef.current) clearInterval(respinIntervalRef.current)
+      if (respinStopRef.current) clearTimeout(respinStopRef.current)
+    }
+  }, [respinToken]) // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div
-      className={`flex flex-col gap-2 cursor-pointer ${isMagicPhase ? 'hover:opacity-80' : ''}`}
+      className={`flex flex-col gap-2 relative ${isMagicPhase || isTargetingMode ? 'cursor-pointer' : ''}`}
       role="list"
       aria-label={`Reel column ${colIndex + 1}`}
       onClick={onColumnClick}
     >
+      {/* US4: clear, persistent locked indicator */}
       {locked && (
-        <div className="text-center text-xs text-amber-400 font-bold">🔒</div>
+        <div
+          role="status"
+          aria-label="locked"
+          className="flex items-center justify-center gap-1 rounded-md bg-amber-900 border-2 border-amber-400 px-2 py-0.5"
+        >
+          <span className="text-amber-300 text-xs font-bold">🔒 Locked</span>
+        </div>
       )}
+
+      {/* US5: column click target affordance when targeting mode is active */}
+      {isTargetingMode && (
+        <button
+          type="button"
+          aria-label={`Select column ${colIndex + 1}`}
+          className="absolute inset-0 z-10 rounded-xl border-2 border-dashed border-purple-400 bg-purple-900/20 hover:bg-purple-900/40 focus:outline-none focus:ring-2 focus:ring-purple-400 transition-colors"
+          onClick={(e) => { e.stopPropagation(); onColumnClick() }}
+        />
+      )}
+
       {displayIcons.map((icon, i) => {
         const def = ICON_CATALOG[icon.definitionId]
         const effectiveValue = valueOverrides.get(icon.id) ?? def?.valuePerColumn

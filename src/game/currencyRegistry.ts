@@ -49,7 +49,7 @@ export const CURRENCY_REGISTRY: Record<string, CurrencyDefinition> = {
   air: {
     key: 'air',
     label: 'Air',
-    startingAmount: 0,
+    startingAmount: 10,
     autoConvertTo: null,
     convertibleFrom: null,
     winCondition: null,
@@ -58,7 +58,7 @@ export const CURRENCY_REGISTRY: Record<string, CurrencyDefinition> = {
   water: {
     key: 'water',
     label: 'Water',
-    startingAmount: 0,
+    startingAmount: 10,
     autoConvertTo: null,
     convertibleFrom: null,
     winCondition: null,

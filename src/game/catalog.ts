@@ -71,7 +71,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     valuePerColumn: 1,
     label: 'Air',
     effect: { type: 'add_currency', currency: 'air', valuePerColumn: 1 },
-    cost: { currency: 'copper', amount: 10 },
+    cost: { currency: 'copper', amount: 1 },
   },
   water: {
     definitionId: 'water',
@@ -79,7 +79,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     valuePerColumn: 1,
     label: 'Water',
     effect: { type: 'add_currency', currency: 'water', valuePerColumn: 1 },
-    cost: { currency: 'silver', amount: 1 },
+    cost: { currency: 'copper', amount: 1 },
   },
   earth: {
     definitionId: 'earth',
@@ -87,7 +87,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     valuePerColumn: 1,
     label: 'Earth',
     effect: { type: 'add_currency', currency: 'earth', valuePerColumn: 1 },
-    cost: { currency: 'silver', amount: 10 },
+    cost: { currency: 'silver', amount: 1 },
   },
   fire: {
     definitionId: 'fire',
