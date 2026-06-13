@@ -58,13 +58,13 @@ specs/009-v09-energy/
 src/
 ├── App.tsx                       # MODIFY: show StarvationModal on phase='starvation'; pass rowCount; dispatch DISMISS_STARVATION
 └── game/
-│   ├── types.ts                  # MODIFY: add 'energy' to CurrencyKey; add multiCost to IconDefinition; add 'starvation' to GamePhase; add rowCount:number to GameState; add DISMISS_STARVATION action
+│   ├── types.ts                  # MODIFY: add 'energy' to CurrencyKey; add multiCost to IconDefinition; add 'starvation' to GamePhase; add rowCount:number to GameState; add initialSpinPayouts:Payout[]|null to GameState; add DISMISS_STARVATION action
 │   ├── catalog.ts                # MODIFY: add energy icon with multiCost; cost:null
 │   ├── currencyRegistry.ts       # MODIFY: add energy entry (no bar display)
 │   ├── initialState.ts           # MODIFY: add rowCount:3; add copper:10 to PRESTIGE_STARTING_CURRENCIES
-│   ├── persistence.ts            # MODIFY: migration — add rowCount:3 if absent
-│   ├── reducer.ts                # MODIFY: tryBuyIcon handles multiCost; CLAIM filters energy payout, checks thresholds, updates rowCount, auto-prestiges on food=0; add DISMISS_STARVATION case
-│   ├── achievements.ts           # MODIFY: rename wip1→sweet / wip2→nice; add payouts param to checkNewAchievements; fix second-breakfast and master-of-elements; fix i-understand-it-now description; add sweet/nice checks
+│   ├── persistence.ts            # MODIFY: migration — add rowCount:3 if absent; add initialSpinPayouts:null if absent; strip 'ancient-civilization' from unlockedAchievements
+│   ├── reducer.ts                # MODIFY: tryBuyIcon handles multiCost; SPIN stores initialSpinPayouts; CLAIM filters energy payout, checks thresholds, updates rowCount, blow-it-up check, auto-prestiges on food=0, clears initialSpinPayouts; add DISMISS_STARVATION case
+│   ├── achievements.ts           # MODIFY: rename wip1→sweet / wip2→nice; replace ancient-civilization→blow-it-up; add payouts param to checkNewAchievements; fix second-breakfast and master-of-elements; fix i-understand-it-now description; add sweet/nice/blow-it-up checks
 │   └── spinLogic.ts              # MODIFY: parameterize drawColumn(reel, rowCount); update extractColumn to draw rowCount rows
 └── components/
     ├── StarvationModal.tsx        # NEW: "You ran out of food; slot machine has been reset" dialog with dismiss button
@@ -75,7 +75,7 @@ src/
 
 tests/
 ├── unit/
-│   ├── achievements.test.ts       # MODIFY: fix second-breakfast/MoE tests to use payouts; add sweet/nice tests
+│   ├── achievements.test.ts       # MODIFY: fix second-breakfast/MoE tests to use payouts; add sweet/nice/blow-it-up tests
 │   ├── reducer.test.ts            # MODIFY: food=0→starvation phase; rowCount updates; DISMISS_STARVATION
 │   └── spinLogic.test.ts          # MODIFY: drawColumn with rowCount 4 and 5
 └── integration/

@@ -52,6 +52,7 @@ export type GamePhase = 'market' | 'spinning' | 'magic' | 'gameover' | 'win' | '
 | Field | Change | Notes |
 |-------|--------|-------|
 | `rowCount` | **ADDED** `3 \| 4 \| 5` | Defaults to 3; increases on Sweet/Nice triggers; resets to 3 on prestige |
+| `initialSpinPayouts` | **ADDED** `Payout[] \| null` | Set when SPIN resolves; read in CLAIM for blow-it-up check; cleared to null after CLAIM or any prestige |
 
 ---
 
@@ -70,10 +71,12 @@ export type GamePhase = 'market' | 'spinning' | 'magic' | 'gameover' | 'win' | '
 // Before
 | 'wip1'
 | 'wip2'
+| 'ancient-civilization'
 
 // After
 | 'sweet'
 | 'nice'
+| 'blow-it-up'
 ```
 
 ---
@@ -144,6 +147,7 @@ export const PRESTIGE_STARTING_CURRENCIES: Record<string, number> = {
 |---|---|---|
 | `sweet` (was `wip1`) | WIP — never unlocks | Energy payout ≥ 16 in one claim; sets `rowCount` to max(current, 4) |
 | `nice` (was `wip2`) | WIP — never unlocks | Energy payout ≥ 69 in one claim; sets `rowCount` to max(current, 5) |
+| `blow-it-up` (replaces `ancient-civilization`) | Previous condition | `prevState.phase === 'magic'` AND `sum(prevState.initialSpinPayouts) > 0` AND `sum(claimPayouts) > sum(prevState.initialSpinPayouts)` |
 | `second-breakfast` | ≥ 2 apple-family icons in active grid | `claimPayouts.find(p => p.family === 'apple')?.amount >= 2` |
 | `master-of-elements` | All 4 element families present in active grid | All 4 element families have an entry in `claimPayouts` |
 | `i-understand-it-now` | Description: "Prestige while keeping a silver or gold icon" | Description: "Prestige keeping an icon that costs at least 1 silver" (condition unchanged) |
@@ -153,9 +157,11 @@ export const PRESTIGE_STARTING_CURRENCIES: Record<string, number> = {
 ## Persistence Migration (applied in `loadState()`)
 
 1. If `saved.rowCount` is `undefined` → set to `3`.
-2. If `saved.unlockedAchievements` includes `'wip1'` → replace with `'sweet'` (safety; WIP was never unlockable).
-3. If `saved.unlockedAchievements` includes `'wip2'` → replace with `'nice'` (same).
-4. Existing `spinMultiplier` and `masterOfElements` migrations from v0.8 remain in place.
+2. If `saved.initialSpinPayouts` is `undefined` → set to `null`.
+3. If `saved.unlockedAchievements` includes `'wip1'` → replace with `'sweet'` (safety; WIP was never unlockable).
+4. If `saved.unlockedAchievements` includes `'wip2'` → replace with `'nice'` (same).
+5. If `saved.unlockedAchievements` includes `'ancient-civilization'` → **remove** it (achievement replaced; old unlock does not carry over to `'blow-it-up'`).
+6. Existing `spinMultiplier` and `masterOfElements` migrations from v0.8 remain in place.
 
 ---
 

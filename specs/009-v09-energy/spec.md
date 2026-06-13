@@ -87,6 +87,24 @@ Four existing bugs are corrected:
 
 ---
 
+### User Story 5 - "Blow it up" Achievement (Priority: P3)
+
+When a player uses the respin action (magic phase) to improve a non-zero spin result, and the final spin earns more total resources than the initial spin had earned before magic, the "Blow it up" achievement unlocks. "Ancient Civilization" is removed and replaced by this achievement.
+
+**Why this priority**: Achievement variety; rewards skillful use of the magic phase to improve an already-good result. The non-zero requirement ensures the player genuinely improved something rather than turning a blank spin into anything.
+
+**Independent Test**: Get a non-zero initial spin → use magic → claim a better result → confirm "Blow it up" unlocks. Get a zero initial spin → use magic → claim a non-zero result → confirm "Blow it up" does NOT unlock. Claim without using magic → confirm "Blow it up" does NOT unlock.
+
+**Acceptance Scenarios**:
+
+1. **Given** the initial spin result earns any non-zero total resources, **When** the player uses the magic phase and claims a final result that earns strictly more total resources than the initial spin, **Then** "Blow it up" unlocks.
+2. **Given** the initial spin result earns any non-zero total, **When** the player uses the magic phase and claims a result earning the same or fewer total resources as the initial spin, **Then** "Blow it up" does NOT unlock.
+3. **Given** the initial spin result earns zero resources, **When** the player uses the magic phase and claims any result (even non-zero), **Then** "Blow it up" does NOT unlock.
+4. **Given** any spin result, **When** the player claims without using the magic phase, **Then** "Blow it up" does NOT unlock.
+5. **Given** v0.9 loads with a save that had "Ancient Civilization" unlocked, **When** the Achievements tab is viewed, **Then** "Ancient Civilization" does not appear; "Blow it up" appears in its place and is NOT pre-unlocked (must be earned).
+
+---
+
 ### Edge Cases
 
 - What if the player gains exactly 69 energy in a single spin without ever having gained 16? Both "Sweet" and "Nice" achievements unlock simultaneously and rows jump directly to 5.
@@ -97,6 +115,9 @@ Four existing bugs are corrected:
 - What if the Energy icon appears in a blocked column? That column's count is excluded from the product — effectively its factor becomes 0, making total energy for the spin 0 unless the player has Energy icons in all remaining active columns.
 - Can the Energy icon trigger the "Out of Stock" achievement? Yes — if the player accumulates enough Energy icons that a single icon type reaches 50% of the reel, "Out of Stock" unlocks normally.
 - Can a player own multiple Energy icons? Yes, subject to the standard `qty × 2 < reel_size` market cap.
+- If the initial spin earns zero resources and magic improves it, "Blow it up" does NOT trigger — the original result must already be non-zero.
+- If the player uses magic and the final total exactly equals the initial total, "Blow it up" does NOT trigger — final must be strictly greater.
+- A player who had "Ancient Civilization" in a previous save does not automatically receive "Blow it up" — the new achievement must be earned freshly.
 
 ## Requirements *(mandatory)*
 
@@ -124,6 +145,11 @@ Four existing bugs are corrected:
 **Prestige Starting Copper:**
 - **FR-015**: After any prestige (regular or auto), the player MUST start with copper=10 in addition to food=10, air=10, water=10.
 
+**Achievement Replacement:**
+- **FR-020**: "Ancient Civilization" MUST be removed from the Achievements list and replaced by "Blow it up" with the description "Use the respin action and earn even more as a result."
+- **FR-021**: "Blow it up" MUST unlock when all three conditions are true at the moment of claiming: (a) the player entered the magic/respin phase for this spin; (b) the initial spin result before magic had a total resource payout greater than zero; (c) the final claimed payout total is strictly greater than the initial spin payout total.
+- **FR-022**: A player whose saved data contains the old "Ancient Civilization" achievement MUST NOT automatically receive "Blow it up"; the old ID is discarded on migration.
+
 **Bug Fixes:**
 - **FR-016**: "Second Breakfast" MUST only unlock when the claimed spin payout includes food earned from apple-family icons totaling ≥ 2 (i.e., apple-family payout amount ≥ 2). Update the achievement description accordingly.
 - **FR-017**: "Master of Elements" MUST only unlock when the claimed spin payout includes ≥ 1 currency earned from each of the four element families (air, water, earth, fire). Update the achievement description accordingly.
@@ -135,6 +161,7 @@ Four existing bugs are corrected:
 - **Energy**: A transient spin-level value (not a persistent currency) equal to the product of the Energy icon count in each active column (same formula as other icon payouts). Exists only during the CLAIM evaluation phase; zero if the Energy icon is absent from any active column.
 - **Energy Icon**: A new purchasable icon (multi-currency cost: 1 gold + 1 air + 1 water + 1 earth + 1 fire). Generates energy when it appears in an active spin column.
 - **Row Count**: A persistent game-state value (3, 4, or 5) representing how many rows the slot machine displays per column. Defaults to 3; upgraded by energy thresholds; resets on prestige.
+- **Initial Spin Result**: The total resource payout computed at the moment the slot machine stops spinning, before the player enters the magic phase. Stored transiently per spin for use in the "Blow it up" check; not displayed separately in the UI.
 
 ## Success Criteria *(mandatory)*
 
@@ -149,6 +176,7 @@ Four existing bugs are corrected:
 - **SC-007**: "Master of Elements" achievement unlocks if and only if all four element families produce ≥ 1 currency in the claimed spin; zero false positives.
 - **SC-008**: A player with 0 copper, 0 silver, and ≥ 1 gold successfully purchases any 1-copper-cost item in 100% of attempts.
 - **SC-009**: "I Understand It Now" fires for silver/gold-cost icon prestiges and does not fire for copper-only prestiges — verified across all icon cost tiers in the catalog.
+- **SC-010**: "Blow it up" unlocks on 100% of claims satisfying all three conditions (magic used, initial total > 0, final total > initial total); zero false positives when any condition is unmet.
 
 ## Assumptions
 
@@ -158,5 +186,5 @@ Four existing bugs are corrected:
 - The Energy icon is treated like any other icon for reel-cap and achievement purposes — it can trigger "Out of Stock" if it reaches 50% of the reel.
 - Row count is part of `GameState` and is persisted in the same storage as other game state.
 - Energy currency does not appear in the currency bar; it is not stored in `GameState.currencies`.
-- Auto-prestige does not show a "you ran out of food" message — the transition is immediate with no intermediate screen.
+- Auto-prestige shows a notification (StarvationModal) before resuming play; it does not proceed silently.
 - The multi-level currency conversion fix applies to all market purchases, not just the Energy icon.
