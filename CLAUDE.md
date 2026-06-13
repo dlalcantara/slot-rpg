@@ -1,5 +1,5 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-specs/008-v08-achievements/plan.md
+specs/009-v09-energy/plan.md
 <!-- SPECKIT END -->
