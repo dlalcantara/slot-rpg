@@ -68,16 +68,16 @@ describe('SPIN action', () => {
   })
 
   it('blocks spin when food < multiplier', () => {
-    const state = stateWithCurrencies({ food: 9 })
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 10 })
-    expect(next.currencies.food).toBe(9)
+    const state = stateWithCurrencies({ food: 0 })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+    expect(next.currencies.food).toBe(0)
     expect(next.spinCount).toBe(state.spinCount)
   })
 
   it('stores pendingMultiplier', () => {
-    const state = stateWithCurrencies({ food: 100 })
-    const next = gameReducer(state, { type: 'SPIN', multiplier: 10 })
-    expect(next.pendingMultiplier).toBe(10)
+    const state = stateWithCurrencies({ food: 10 })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+    expect(next.pendingMultiplier).toBe(1)
   })
 
   it('draws all 5 columns fresh (no locked column carry-over)', () => {
@@ -144,13 +144,13 @@ describe('MAGIC_RESPIN action', () => {
     expect(next.currencies.air).toBe(8) // 10 - 2
   })
 
-  it('multiplies cost by pendingMultiplier', () => {
+  it('cost scales with pendingMultiplier', () => {
     const state = magicState({
       currencies: { ...makeInitialState().currencies, air: 20 },
-      pendingMultiplier: 10,
+      pendingMultiplier: 1,
     })
     const next = gameReducer(state, { type: 'MAGIC_RESPIN', colIdx: 0 })
-    expect(next.currencies.air).toBe(10) // 20 - (1 * 10)
+    expect(next.currencies.air).toBe(19) // 20 - (1 * 1)
   })
 
   it('increments respin counter', () => {
@@ -186,13 +186,13 @@ describe('MAGIC_SWAP action', () => {
     expect(next.currencies.water).toBe(4)
   })
 
-  it('multiplies swap cost by pendingMultiplier', () => {
+  it('swap cost scales with pendingMultiplier', () => {
     const state = magicState({
       currencies: { ...makeInitialState().currencies, water: 20 },
-      pendingMultiplier: 10,
+      pendingMultiplier: 1,
     })
     const next = gameReducer(state, { type: 'MAGIC_SWAP', fromCol: 0, fromRow: 0, toCol: 0, toRow: 1 })
-    expect(next.currencies.water).toBe(10) // 20 - (1 * 10)
+    expect(next.currencies.water).toBe(19) // 20 - (1 * 1)
   })
 
   it('swaps two adjacent cells', () => {
@@ -241,23 +241,23 @@ describe('MAGIC_BLOCK_COLUMN action', () => {
     expect(next.currencies.earth).toBe(3)
   })
 
-  it('multiplies first block cost by x10 multiplier → costs 10 Earth', () => {
+  it('block cost scales with pendingMultiplier', () => {
     const state = magicState({
       currencies: { ...makeInitialState().currencies, earth: 20 },
-      pendingMultiplier: 10,
+      pendingMultiplier: 1,
     })
     const next = gameReducer(state, { type: 'MAGIC_BLOCK_COLUMN', colIdx: 0 })
-    expect(next.currencies.earth).toBe(10) // 20 - (1 * 10)
+    expect(next.currencies.earth).toBe(19) // 20 - (1 * 1)
   })
 
-  it('multiplies second block cost by x10 multiplier → costs 20 Earth', () => {
+  it('second block cost is 2x pendingMultiplier', () => {
     const state = magicState({
       currencies: { ...makeInitialState().currencies, earth: 30 },
       blockedColumns: [1],
-      pendingMultiplier: 10,
+      pendingMultiplier: 1,
     })
     const next = gameReducer(state, { type: 'MAGIC_BLOCK_COLUMN', colIdx: 0 })
-    expect(next.currencies.earth).toBe(10) // 30 - (2 * 10)
+    expect(next.currencies.earth).toBe(28) // 30 - (2 * 1)
   })
 
   it('appends column index to blockedColumns', () => {
@@ -424,45 +424,6 @@ describe('CLAIM action', () => {
     expect(next.currencies.food).toBe(15)
   })
 
-  it('sets masterOfElements when condition met', () => {
-    const grid: MagicCell[][] = [
-      [
-        { icon: { id: 'c0r0', definitionId: 'fire' }, valueOverride: null },
-        { icon: { id: 'c0r1', definitionId: 'fire' }, valueOverride: null },
-        { icon: { id: 'c0r2', definitionId: 'fire' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c1r0', definitionId: 'air' }, valueOverride: null },
-        { icon: { id: 'c1r1', definitionId: 'air' }, valueOverride: null },
-        { icon: { id: 'c1r2', definitionId: 'air' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c2r0', definitionId: 'water' }, valueOverride: null },
-        { icon: { id: 'c2r1', definitionId: 'water' }, valueOverride: null },
-        { icon: { id: 'c2r2', definitionId: 'water' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c3r0', definitionId: 'earth' }, valueOverride: null },
-        { icon: { id: 'c3r1', definitionId: 'earth' }, valueOverride: null },
-        { icon: { id: 'c3r2', definitionId: 'earth' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c4r0', definitionId: 'air' }, valueOverride: null },
-        { icon: { id: 'c4r1', definitionId: 'water' }, valueOverride: null },
-        { icon: { id: 'c4r2', definitionId: 'earth' }, valueOverride: null },
-      ],
-    ]
-    const state = magicState({ magicGrid: grid })
-    const next = gameReducer(state, { type: 'CLAIM' })
-    expect(next.masterOfElements).toBe(true)
-  })
-
-  it('masterOfElements stays true once set', () => {
-    const state = magicState({ masterOfElements: true })
-    const next = gameReducer(state, { type: 'CLAIM' })
-    expect(next.masterOfElements).toBe(true)
-  })
-
   it('appends to gameLog', () => {
     const state = magicState()
     expect(state.gameLog).toHaveLength(0)
@@ -569,12 +530,12 @@ describe('BUY_ICON action', () => {
 describe('WIN condition', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('sets phase to win at CLAIM when crowns reach 100', async () => {
+  it('does NOT set phase to win when crowns reach 100 (win condition removed)', async () => {
     const { calculatePayouts } = await import('@/game/spinLogic')
     vi.mocked(calculatePayouts).mockReturnValueOnce([{ family: 'crown', amount: 100, currency: 'crowns' }])
     const state = magicState({ currencies: { ...makeInitialState().currencies, crowns: 0 } })
     const next = gameReducer(state, { type: 'CLAIM' })
-    expect(next.phase).toBe('win')
+    expect(next.phase).toBe('market')
   })
 
   it('CONTINUE_AFTER_WIN transitions phase to market', () => {
@@ -600,7 +561,6 @@ describe('HARD_RESET action', () => {
     expect(next.lastSpinResult).toBeNull()
     expect(next.magicGrid).toBeNull()
     expect(next.blockedColumns).toEqual([])
-    expect(next.masterOfElements).toBe(false)
   })
 })
 
@@ -811,15 +771,14 @@ describe('PRESTIGE action', () => {
     expect(next.reel.icons).toHaveLength(5)
   })
 
-  it('resets magicGrid, blockedColumns, magicCounters, masterOfElements, pendingMultiplier', () => {
+  it('resets magicGrid, blockedColumns, magicCounters, pendingMultiplier', () => {
     const state: GameState = {
       ...makeInitialState(),
       phase: 'market',
       reel: buildReelWith3xIcons(['apple', 'copper', 'air', 'water']),
       blockedColumns: [1],
       magicCounters: { respin: 5, swap: 3, increaseValue: 2 },
-      masterOfElements: true,
-      pendingMultiplier: 10,
+      pendingMultiplier: 1,
     }
     const next = gameReducer(state, {
       type: 'PRESTIGE',
@@ -827,8 +786,125 @@ describe('PRESTIGE action', () => {
     })
     expect(next.blockedColumns).toEqual([])
     expect(next.magicCounters).toEqual({ respin: 0, swap: 0, increaseValue: 0 })
-    expect(next.masterOfElements).toBe(false)
     expect(next.pendingMultiplier).toBe(1)
     expect(next.magicGrid).toBeNull()
+  })
+})
+
+// ─── T010: Achievement accumulation via BUY_ICON ──────────────────────────────
+
+describe('BUY_ICON achievement accumulation', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('BUY_ICON apple → unlockedAchievements gains how-do-you-like-them-apples', () => {
+    const state = stateWithCurrencies({ copper: 5 })
+    const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    expect(next.unlockedAchievements).toContain('how-do-you-like-them-apples')
+  })
+
+  it('duplicate BUY_ICON apple does not append the same achievement twice', () => {
+    const state = stateWithCurrencies({ copper: 50 })
+    const after1 = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    const after2 = gameReducer(after1, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    const count = after2.unlockedAchievements.filter((id) => id === 'how-do-you-like-them-apples').length
+    expect(count).toBe(1)
+  })
+})
+
+// ─── T016: Market cap formula (BUY_ICON) ─────────────────────────────────────
+
+describe('BUY_ICON market cap formula (ownedCount * 2 >= reel.icons.length)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('blocked when ownedCount * 2 >= reel.icons.length', () => {
+    // Reel: 6 icons, 3 apples → 3*2=6 >= 6 → blocked
+    const base = stateWithCurrencies({ copper: 5 })
+    const state: GameState = {
+      ...base,
+      reel: {
+        icons: [
+          { id: '1', definitionId: 'apple' },
+          { id: '2', definitionId: 'apple' },
+          { id: '3', definitionId: 'apple' },
+          { id: '4', definitionId: 'copper' },
+          { id: '5', definitionId: 'air' },
+          { id: '6', definitionId: 'water' },
+        ],
+      },
+    }
+    const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    expect(next).toBe(state)
+  })
+
+  it('allowed and reel grows by 1 when ownedCount * 2 < reel.icons.length', () => {
+    // Reel: 5 icons, 2 apples → 2*2=4 < 5 → allowed
+    const base = stateWithCurrencies({ copper: 5 })
+    const state: GameState = {
+      ...base,
+      reel: {
+        icons: [
+          { id: '1', definitionId: 'apple' },
+          { id: '2', definitionId: 'apple' },
+          { id: '3', definitionId: 'copper' },
+          { id: '4', definitionId: 'air' },
+          { id: '5', definitionId: 'water' },
+        ],
+      },
+    }
+    const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    expect(next.reel.icons.length).toBe(6)
+  })
+
+  it('odd-reel edge case: 3/7 allowed → 4/8 blocked', () => {
+    // Reel: 7 icons, 3 apples → 3*2=6 < 7 → allowed
+    const base = stateWithCurrencies({ copper: 5 })
+    const state: GameState = {
+      ...base,
+      reel: {
+        icons: [
+          { id: '1', definitionId: 'apple' },
+          { id: '2', definitionId: 'apple' },
+          { id: '3', definitionId: 'apple' },
+          { id: '4', definitionId: 'copper' },
+          { id: '5', definitionId: 'air' },
+          { id: '6', definitionId: 'water' },
+          { id: '7', definitionId: 'earth' },
+        ],
+      },
+    }
+    const after = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    // 4 apples, 8 icons → 4*2=8 >= 8 → blocked on next buy
+    expect(after.reel.icons.length).toBe(8)
+    const blocked = gameReducer(after, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
+    expect(blocked).toBe(after)
+  })
+})
+
+// ─── T022: SpinMultiplier type and persistence clamp ─────────────────────────
+
+describe('SpinMultiplier = 1 only', () => {
+  it('SPIN with multiplier 1 succeeds', () => {
+    const state = stateWithCurrencies({ food: 5 })
+    const next = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+    expect(next.phase).toBe('spinning')
+  })
+
+  it('initial state has spinMultiplier: 1', () => {
+    const state = makeInitialState()
+    expect(state.settings.spinMultiplier).toBe(1)
+  })
+})
+
+// ─── T027: 100 crowns → no win ────────────────────────────────────────────────
+
+describe('Win condition removed for crowns', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('reaching 100 crowns does not trigger win phase', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([{ family: 'crown', amount: 100, currency: 'crowns' }])
+    const state = magicState({ currencies: { ...makeInitialState().currencies, crowns: 0 } })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.phase).toBe('market')
   })
 })

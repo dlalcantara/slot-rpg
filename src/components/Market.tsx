@@ -29,16 +29,20 @@ export function Market({ currencies, reel, onBuy }: Props) {
     <div className="bg-gray-800 rounded-xl border border-gray-700 p-3">
       <h3 className="text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">Market</h3>
       <div role="list" className="flex flex-col gap-2 max-h-64 overflow-y-auto">
-        {forSale.map((def) => (
-          <div key={def.definitionId} role="listitem">
-            <MarketItem
-              def={def}
-              currencies={currencies}
-              remainingPurchasable={Math.max(0, 3 - (ownedCounts.get(def.definitionId) ?? 0))}
-              onBuy={onBuy}
-            />
-          </div>
-        ))}
+        {forSale.map((def) => {
+          const ownedCount = ownedCounts.get(def.definitionId) ?? 0
+          const canBuyMore = ownedCount * 2 < reel.icons.length
+          return (
+            <div key={def.definitionId} role="listitem">
+              <MarketItem
+                def={def}
+                currencies={currencies}
+                canBuyMore={canBuyMore}
+                onBuy={onBuy}
+              />
+            </div>
+          )
+        })}
       </div>
     </div>
   )

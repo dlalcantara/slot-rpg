@@ -43,7 +43,7 @@ export const CURRENCY_REGISTRY: Record<string, CurrencyDefinition> = {
     startingAmount: 0,
     autoConvertTo: null,
     convertibleFrom: null,
-    winCondition: { threshold: 100 },
+    winCondition: null,
     lossCondition: null,
   },
   air: {

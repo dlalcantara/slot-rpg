@@ -7,7 +7,7 @@ interface Props {
   onSettingsChange: (patch: Partial<PlayerSettings>) => void
 }
 
-const MULTIPLIERS: SpinMultiplier[] = [1, 10, 100]
+const MULTIPLIERS: SpinMultiplier[] = [1]
 
 export function SpinControls({ settings, spinning, isMagicPhase, onSettingsChange }: Props) {
   return (

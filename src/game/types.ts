@@ -66,7 +66,7 @@ export interface SpinResult {
 
 export type GamePhase = 'market' | 'spinning' | 'magic' | 'gameover' | 'win'
 
-export type SpinMultiplier = 1 | 10 | 100
+export type SpinMultiplier = 1
 
 export interface PlayerSettings {
   autoConvert: boolean
@@ -82,7 +82,7 @@ export const DEFAULT_SETTINGS: PlayerSettings = {
 
 export interface SpinLogEntry {
   spinNumber: number
-  multiplier: SpinMultiplier
+  multiplier: number
   payouts: Payout[]
   timestamp: number
 }
@@ -110,7 +110,7 @@ export interface GameState {
   magicGrid: MagicCell[][] | null
   blockedColumns: number[]
   magicCounters: MagicCounters
-  masterOfElements: boolean
+  unlockedAchievements: import('./achievements').AchievementId[]
   pendingMultiplier: SpinMultiplier
 }
 

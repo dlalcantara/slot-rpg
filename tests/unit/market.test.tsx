@@ -47,3 +47,60 @@ describe('Market ordering (US6)', () => {
     expect(lastText).toContain('Crown')
   })
 })
+
+// ─── T021: Market cap formula tests ──────────────────────────────────────────
+
+describe('Market canBuyMore formula (T021)', () => {
+  it('shows buy button disabled when ownedCount * 2 >= reel size (even-reel cap 3/6)', () => {
+    // 6 total icons, 3 apples → 3*2=6 >= 6 → canBuyMore = false
+    const reel = {
+      icons: [
+        { id: '1', definitionId: 'apple' },
+        { id: '2', definitionId: 'apple' },
+        { id: '3', definitionId: 'apple' },
+        { id: '4', definitionId: 'copper' },
+        { id: '5', definitionId: 'air' },
+        { id: '6', definitionId: 'water' },
+      ],
+    }
+    render(<Market currencies={emptyCurrencies} reel={reel} onBuy={() => {}} />)
+    const appleBtn = screen.getByRole('button', { name: /buy apple/i })
+    expect(appleBtn).toBeDisabled()
+  })
+
+  it('buy button enabled when ownedCount * 2 < reel size (even-reel 2/6)', () => {
+    // 6 total icons, 2 apples → 2*2=4 < 6 → canBuyMore = true
+    const reel = {
+      icons: [
+        { id: '1', definitionId: 'apple' },
+        { id: '2', definitionId: 'apple' },
+        { id: '3', definitionId: 'copper' },
+        { id: '4', definitionId: 'air' },
+        { id: '5', definitionId: 'water' },
+        { id: '6', definitionId: 'earth' },
+      ],
+    }
+    const richCurrencies = { food: 0, copper: 100, silver: 0, gold: 0, crowns: 0, air: 0, water: 0, earth: 0, fire: 0 }
+    render(<Market currencies={richCurrencies} reel={reel} onBuy={() => {}} />)
+    const appleBtn = screen.getByRole('button', { name: /buy apple/i })
+    expect(appleBtn).not.toBeDisabled()
+  })
+
+  it('odd-reel: 3 apples out of 7 allowed (3*2=6 < 7)', () => {
+    const reel = {
+      icons: [
+        { id: '1', definitionId: 'apple' },
+        { id: '2', definitionId: 'apple' },
+        { id: '3', definitionId: 'apple' },
+        { id: '4', definitionId: 'copper' },
+        { id: '5', definitionId: 'air' },
+        { id: '6', definitionId: 'water' },
+        { id: '7', definitionId: 'earth' },
+      ],
+    }
+    const richCurrencies = { food: 0, copper: 100, silver: 0, gold: 0, crowns: 0, air: 0, water: 0, earth: 0, fire: 0 }
+    render(<Market currencies={richCurrencies} reel={reel} onBuy={() => {}} />)
+    const appleBtn = screen.getByRole('button', { name: /buy apple/i })
+    expect(appleBtn).not.toBeDisabled()
+  })
+})

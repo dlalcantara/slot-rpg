@@ -7,7 +7,6 @@ function makeResult(payouts: SpinResult['payouts']): SpinResult {
   return {
     columns: [],
     payouts,
-    valueOverrides: new Map(),
   }
 }
 

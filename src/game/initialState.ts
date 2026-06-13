@@ -38,7 +38,7 @@ export function makeInitialState(): GameState {
     magicGrid: null,
     blockedColumns: [],
     magicCounters: { respin: 0, swap: 0, increaseValue: 0 },
-    masterOfElements: false,
+    unlockedAchievements: [],
     pendingMultiplier: 1,
   }
 }

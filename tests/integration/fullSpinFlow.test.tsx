@@ -43,7 +43,7 @@ describe('full spin flow integration', () => {
   it('shows spin button and food counter on load', () => {
     render(<App />)
     expect(screen.getByRole('button', { name: 'Spin the reels' })).toBeInTheDocument()
-    expect(screen.getByText(/food/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/food/i).length).toBeGreaterThan(0)
   })
 
   it('food decrements after clicking SPIN (deducted at spin time)', () => {
@@ -78,22 +78,12 @@ describe('full spin flow integration', () => {
     expect(screen.getAllByRole('button', { name: /reset/i }).length).toBeGreaterThan(0)
   })
 
-  it('win modal appears when crowns reach 100 after CLAIM', () => {
+  it('win modal does NOT appear when crowns reach 100 (win condition removed)', () => {
     mockCalculatePayouts.mockReturnValue([{ family: 'crown', amount: 100, currency: 'crowns' }])
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
     advancePastAnimation()
     fireEvent.click(screen.getByRole('button', { name: 'Claim spin result' }))
-    expect(screen.getByText(/you win/i)).toBeInTheDocument()
-  })
-
-  it('win modal can be dismissed to continue playing', () => {
-    mockCalculatePayouts.mockReturnValue([{ family: 'crown', amount: 100, currency: 'crowns' }])
-    render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
-    advancePastAnimation()
-    fireEvent.click(screen.getByRole('button', { name: 'Claim spin result' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Continue Playing' }))
     expect(screen.queryByText(/you win/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Spin the reels' })).toBeInTheDocument()
   })

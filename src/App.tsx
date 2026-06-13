@@ -15,9 +15,12 @@ import { ReelView } from './components/ReelView'
 import { SpinResultToast } from './components/SpinResultToast'
 import { MagicPhasePanel } from './components/MagicPhasePanel'
 import { CheatPanel } from './components/CheatPanel'
+import { AchievementsTab } from './components/AchievementsTab'
+import { AchievementDialog } from './components/AchievementDialog'
 import type { Currencies, MagicMode, SpinResult } from './game/types'
+import type { AchievementId } from './game/achievements'
 
-type ActiveTab = 'reel' | 'spin' | 'market'
+type ActiveTab = 'reel' | 'spin' | 'market' | 'achievements'
 
 function loadOrInit() {
   return loadState() ?? makeInitialState()
@@ -32,12 +35,12 @@ export default function App() {
   const [swapFrom, setSwapFrom] = useState<{ col: number; row: number } | null>(null)
   const [toastResult, setToastResult] = useState<SpinResult | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [showMasterOfElements, setShowMasterOfElements] = useState(false)
   const [showCheat, setShowCheat] = useState(false)
   const titleClickCountRef = useRef(0)
   const [displayedCurrencies, setDisplayedCurrencies] = useState<Currencies>(() => loadOrInit().currencies)
   const prevCurrenciesRef = useRef<Currencies>(state.currencies)
-  const prevMasterRef = useRef<boolean>(state.masterOfElements)
+  const [pendingDialogs, setPendingDialogs] = useState<AchievementId[]>([])
+  const prevUnlockedRef = useRef<AchievementId[]>(state.unlockedAchievements)
 
   useEffect(() => {
     saveState(state)
@@ -50,11 +53,14 @@ export default function App() {
   }, [state.currencies, spinning, toastResult])
 
   useEffect(() => {
-    if (state.masterOfElements && !prevMasterRef.current) {
-      setShowMasterOfElements(true)
+    const prev = prevUnlockedRef.current
+    const curr = state.unlockedAchievements
+    const newOnes = curr.filter((id) => !prev.includes(id))
+    if (newOnes.length > 0) {
+      setPendingDialogs((q) => [...q, ...newOnes])
     }
-    prevMasterRef.current = state.masterOfElements
-  }, [state.masterOfElements])
+    prevUnlockedRef.current = curr
+  }, [state.unlockedAchievements])
 
   // Show toast when lastSpinResult changes after CLAIM
   useEffect(() => {
@@ -96,7 +102,7 @@ export default function App() {
     setSpinning(false)
     setToastResult(null)
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
-    setShowMasterOfElements(false)
+    setPendingDialogs([])
     setMagicMode(null)
     setSwapFrom(null)
     const fresh = makeInitialState()
@@ -106,6 +112,10 @@ export default function App() {
 
   const handleContinue = useCallback(() => {
     dispatch({ type: 'CONTINUE_AFTER_WIN' })
+  }, [])
+
+  const handleDismissAchievement = useCallback(() => {
+    setPendingDialogs((q) => q.slice(1))
   }, [])
 
   // Secret cheat trigger — click title 5× quickly
@@ -126,6 +136,7 @@ export default function App() {
     { id: 'reel', label: 'Reel' },
     { id: 'spin', label: 'Spin' },
     { id: 'market', label: 'Market' },
+    { id: 'achievements', label: 'Feats' },
   ]
 
   const isMagicPhase = state.phase === 'magic'
@@ -234,28 +245,19 @@ export default function App() {
           <Market currencies={state.currencies} reel={state.reel} onBuy={handleBuy} />
         </div>
 
+        <div className={activeTab === 'achievements' ? '' : 'hidden'}>
+          <AchievementsTab unlockedAchievements={state.unlockedAchievements} />
+        </div>
+
         {state.phase === 'gameover' && <GameOverScreen onReset={handleReset} />}
         {state.phase === 'win' && (
           <WinModal onContinue={handleContinue} onReset={handleReset} />
         )}
         {toastResult && <SpinResultToast result={toastResult} />}
-        {showMasterOfElements && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 rounded-2xl border border-yellow-400 p-6 max-w-sm w-full text-center space-y-4">
-              <div className="text-4xl">🌟</div>
-              <h2 className="text-2xl font-bold text-yellow-300">Master of Elements!</h2>
-              <p className="text-gray-300 text-sm">
-                You have aligned Air, Water, Earth, and Fire. The elements bow to your will.
-              </p>
-              <button
-                onClick={() => setShowMasterOfElements(false)}
-                className="w-full py-2 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold transition-colors"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        )}
+        <AchievementDialog
+          achievementId={pendingDialogs[0] ?? null}
+          onDismiss={handleDismissAchievement}
+        />
         {showCheat && (
           <CheatPanel
             currencies={state.currencies}

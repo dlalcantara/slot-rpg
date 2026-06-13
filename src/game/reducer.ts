@@ -10,7 +10,7 @@ import { CURRENCY_REGISTRY, CURRENCY_ORDER } from './currencyRegistry'
 import { drawColumn, calculatePayouts } from './spinLogic'
 import { saveState, clearState } from './persistence'
 import { makeInitialState, PRESTIGE_STARTING_CURRENCIES } from './initialState'
-import { detectMasterOfElements } from './masterOfElements'
+import { checkNewAchievements } from './achievements'
 import type { GameAction } from './types'
 
 export type { GameAction }
@@ -74,7 +74,7 @@ function tryBuyIcon(state: GameState, iconDefinitionId: string): GameState {
   if (!def || !def.cost) return state
 
   const ownedCount = state.reel.icons.filter((i) => i.definitionId === iconDefinitionId).length
-  if (ownedCount >= 3) return state
+  if (ownedCount * 2 >= state.reel.icons.length) return state
 
   const { currency: costCurrency, amount: costAmount } = def.cost
   const funded = ensureLiquidity({ ...state.currencies }, costCurrency, costAmount)
@@ -86,6 +86,15 @@ function tryBuyIcon(state: GameState, iconDefinitionId: string): GameState {
     ...state,
     currencies,
     reel: { icons: [...state.reel.icons, newIcon] },
+  }
+  const newlyUnlocked = checkNewAchievements(state, newState, { type: 'BUY_ICON', iconDefinitionId })
+  if (newlyUnlocked.length > 0) {
+    const withAchievements: GameState = {
+      ...newState,
+      unlockedAchievements: [...new Set([...newState.unlockedAchievements, ...newlyUnlocked])],
+    }
+    saveState(withAchievements)
+    return withAchievements
   }
   saveState(newState)
   return newState
@@ -257,7 +266,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         currencies = applyAutoConversions(currencies)
       }
 
-      const masterOfElements = state.masterOfElements || detectMasterOfElements(state.magicGrid)
       const phase = checkPhase(currencies)
       const scaledPayouts = rawPayouts.map((p) => ({ ...p, amount: p.amount * multiplier }))
       const logEntry: SpinLogEntry = {
@@ -268,7 +276,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
       const gameLog = [logEntry, ...state.gameLog].slice(0, 10)
 
-      const newState: GameState = {
+      const baseState: GameState = {
         ...state,
         currencies,
         phase,
@@ -276,8 +284,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         magicGrid: null,
         blockedColumns: [],
         gameLog,
-        masterOfElements,
       }
+      const newlyUnlocked = checkNewAchievements(state, baseState, { type: 'CLAIM' })
+      const newState: GameState = newlyUnlocked.length > 0
+        ? { ...baseState, unlockedAchievements: [...new Set([...baseState.unlockedAchievements, ...newlyUnlocked])] }
+        : baseState
       saveState(newState)
       return newState
     }
@@ -294,7 +305,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const valid = keepDefinitionIds.every((defId) => (countMap.get(defId) ?? 0) >= 3)
       if (!valid) return state
 
-      const newState: GameState = {
+      const basePrestigeState: GameState = {
         ...state,
         reel: {
           icons: keepDefinitionIds.map((defId) => ({ id: crypto.randomUUID(), definitionId: defId })),
@@ -305,10 +316,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         magicGrid: null,
         blockedColumns: [],
         magicCounters: { respin: 0, swap: 0, increaseValue: 0 },
-        masterOfElements: false,
         pendingMultiplier: 1,
         gameLog: [],
       }
+      const newlyUnlockedPrestige = checkNewAchievements(state, basePrestigeState, { type: 'PRESTIGE', keepDefinitionIds })
+      const newState: GameState = newlyUnlockedPrestige.length > 0
+        ? { ...basePrestigeState, unlockedAchievements: [...new Set([...basePrestigeState.unlockedAchievements, ...newlyUnlockedPrestige])] }
+        : basePrestigeState
       saveState(newState)
       return newState
     }

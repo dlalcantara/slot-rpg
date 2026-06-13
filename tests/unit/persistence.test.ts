@@ -49,15 +49,17 @@ describe('persistence', () => {
     expect(localStorage.getItem('slot-rpg-state')).toBeNull()
   })
 
-  it('persists and restores settings correctly', () => {
+  it('clamps legacy spinMultiplier to 1 on load', () => {
     const state = makeInitialState()
-    const customSettings = { autoConvert: false, animate: false, spinMultiplier: 10 as const }
-    const stateWithSettings = { ...state, settings: customSettings }
-    saveState(stateWithSettings)
+    const stateWithLegacyMultiplier = {
+      ...state,
+      settings: { autoConvert: false, animate: false, spinMultiplier: 10 },
+    }
+    localStorage.setItem('slot-rpg-state', JSON.stringify(stateWithLegacyMultiplier))
     const loaded = loadState()
     expect(loaded!.settings.autoConvert).toBe(false)
     expect(loaded!.settings.animate).toBe(false)
-    expect(loaded!.settings.spinMultiplier).toBe(10)
+    expect(loaded!.settings.spinMultiplier).toBe(1)
   })
 
   it('persists and restores gameLog correctly', () => {

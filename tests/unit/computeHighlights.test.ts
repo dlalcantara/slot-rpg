@@ -30,7 +30,7 @@ function makeGrid(colDefs: string[][]): MagicCell[][] {
   return colDefs.map((col, ci) =>
     col.map((definitionId, ri) => ({
       icon: { id: `c${ci}r${ri}`, definitionId },
-      valueOverride: undefined,
+      valueOverride: null,
     })),
   )
 }

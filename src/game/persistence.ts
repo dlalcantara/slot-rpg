@@ -28,7 +28,13 @@ export function loadState(): GameState | null {
       return { ...(rest5 as unknown as GameState), version: 6, blockedColumns: [] }
     }
     if (parsed.version !== CURRENT_VERSION) return null
-    return parsed as unknown as GameState
+    const state = parsed as unknown as GameState & { masterOfElements?: unknown }
+    delete state.masterOfElements
+    if (!Array.isArray(state.unlockedAchievements)) state.unlockedAchievements = []
+    if (state.settings?.spinMultiplier !== 1) {
+      state.settings = { ...state.settings, spinMultiplier: 1 }
+    }
+    return state
   } catch {
     return null
   }

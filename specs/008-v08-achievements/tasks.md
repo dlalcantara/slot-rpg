@@ -19,7 +19,7 @@
 
 **Purpose**: Confirm baseline before any changes land.
 
-- [ ] T001 Run `npm run test:run` to confirm all existing tests pass — fix any pre-existing failures before starting
+- [X] T001 Run `npm run test:run` to confirm all existing tests pass — fix any pre-existing failures before starting
 
 ---
 
@@ -29,12 +29,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 Create `src/game/achievements.ts`: define `AchievementId` string union (15 IDs), `AchievementDefinition` interface, and `ACHIEVEMENTS` constant array (15 entries — title, description, isWip; no check logic yet)
-- [ ] T003 [P] Update `src/game/types.ts`: add `unlockedAchievements: AchievementId[]` to `GameState`; remove `masterOfElements: boolean` from `GameState`
-- [ ] T004 [P] Update `src/game/initialState.ts`: add `unlockedAchievements: []`, remove `masterOfElements: false`
-- [ ] T005 [P] Update `src/game/persistence.ts`: add migration — delete `masterOfElements` from saved state if present; set `unlockedAchievements` to `[]` if absent
-- [ ] T006 [P] Update `src/game/reducer.ts`: remove `masterOfElements` field assignments from `CLAIM` and `PRESTIGE` cases; remove `detectMasterOfElements` import; then delete `src/game/masterOfElements.ts`
-- [ ] T007 [P] Update `src/App.tsx`: remove `showMasterOfElements` state, the MoE `useEffect`, and the MoE dialog JSX block — project must compile cleanly with `npm run typecheck`
+- [X] T002 Create `src/game/achievements.ts`: define `AchievementId` string union (15 IDs), `AchievementDefinition` interface, and `ACHIEVEMENTS` constant array (15 entries — title, description, isWip; no check logic yet)
+- [X] T003 [P] Update `src/game/types.ts`: add `unlockedAchievements: AchievementId[]` to `GameState`; remove `masterOfElements: boolean` from `GameState`
+- [X] T004 [P] Update `src/game/initialState.ts`: add `unlockedAchievements: []`, remove `masterOfElements: false`
+- [X] T005 [P] Update `src/game/persistence.ts`: add migration — delete `masterOfElements` from saved state if present; set `unlockedAchievements` to `[]` if absent
+- [X] T006 [P] Update `src/game/reducer.ts`: remove `masterOfElements` field assignments from `CLAIM` and `PRESTIGE` cases; remove `detectMasterOfElements` import; then delete `src/game/masterOfElements.ts`
+- [X] T007 [P] Update `src/App.tsx`: remove `showMasterOfElements` state, the MoE `useEffect`, and the MoE dialog JSX block — project must compile cleanly with `npm run typecheck`
 
 **Checkpoint**: `npm run typecheck` exits 0; `npm run test:run` still passes (no new failures)
 
@@ -48,17 +48,17 @@
 
 ### ⚠️ Write Tests FIRST — confirm RED before implementing
 
-- [ ] T008 Write failing unit tests for `checkNewAchievements` in `tests/unit/achievements.test.ts`: one test per checkable achievement condition (13 conditions; exclude WIP1/WIP2 and "Happily Ever After" which are covered separately) — confirm tests FAIL before T009
-- [ ] T010 [P] Write failing unit tests for achievement accumulation in `tests/unit/reducer.test.ts`: `BUY_ICON` apple → `unlockedAchievements` gains `'how-do-you-like-them-apples'`; duplicate unlock not appended — confirm FAIL before T011
+- [X] T008 Write failing unit tests for `checkNewAchievements` in `tests/unit/achievements.test.ts`: one test per checkable achievement condition (13 conditions; exclude WIP1/WIP2 and "Happily Ever After" which are covered separately) — confirm tests FAIL before T009
+- [X] T010 [P] Write failing unit tests for achievement accumulation in `tests/unit/reducer.test.ts`: `BUY_ICON` apple → `unlockedAchievements` gains `'how-do-you-like-them-apples'`; duplicate unlock not appended — confirm FAIL before T011
 
 ### Implementation
 
-- [ ] T009 Implement `checkNewAchievements(prevState: GameState, newState: GameState, action: GameAction): AchievementId[]` in `src/game/achievements.ts`: evaluate all 13 checkable conditions + "Happily Ever After" cascade; filter out already-unlocked IDs; return only newly earned ones
-- [ ] T011 Update `src/game/reducer.ts`: at end of `BUY_ICON`, `CLAIM`, and `PRESTIGE` cases, call `checkNewAchievements(state, newState, action)` and merge returned IDs into `newState.unlockedAchievements` (deduplicated)
-- [ ] T012 [P] Create `src/components/AchievementsTab.tsx`: scrollable list of all 15 achievements; unlocked entries visually highlighted (e.g. green border + bright text), WIP entries labeled "Coming Soon" and dimmed, locked entries dimmed — accepts `unlockedAchievements: AchievementId[]` prop
-- [ ] T013 [P] Create `src/components/AchievementDialog.tsx`: modal overlay showing achievement title and description on unlock; dismiss button; accepts `achievementId: AchievementId | null` and `onDismiss: () => void` props
-- [ ] T014 Update `src/App.tsx`: add `'achievements'` to `ActiveTab` union and tabs array; add hidden-div render for `AchievementsTab`; add `pendingDialogs: AchievementId[]` local state; add `useEffect` (with `useRef` snapshot) to detect newly added entries in `state.unlockedAchievements` and enqueue them; render `AchievementDialog` for `pendingDialogs[0]`; on dismiss pop the queue
-- [ ] T015 Write integration test in `tests/integration/achievementFlow.test.tsx`: dispatch `BUY_ICON` for apple → assert `state.unlockedAchievements` includes `'how-do-you-like-them-apples'`; dispatch `CLAIM` with a spin result containing 2 apple-family icons → assert `'second-breakfast'` added
+- [X] T009 Implement `checkNewAchievements(prevState: GameState, newState: GameState, action: GameAction): AchievementId[]` in `src/game/achievements.ts`: evaluate all 13 checkable conditions + "Happily Ever After" cascade; filter out already-unlocked IDs; return only newly earned ones
+- [X] T011 Update `src/game/reducer.ts`: at end of `BUY_ICON`, `CLAIM`, and `PRESTIGE` cases, call `checkNewAchievements(state, newState, action)` and merge returned IDs into `newState.unlockedAchievements` (deduplicated)
+- [X] T012 [P] Create `src/components/AchievementsTab.tsx`: scrollable list of all 15 achievements; unlocked entries visually highlighted (e.g. green border + bright text), WIP entries labeled "Coming Soon" and dimmed, locked entries dimmed — accepts `unlockedAchievements: AchievementId[]` prop
+- [X] T013 [P] Create `src/components/AchievementDialog.tsx`: modal overlay showing achievement title and description on unlock; dismiss button; accepts `achievementId: AchievementId | null` and `onDismiss: () => void` props
+- [X] T014 Update `src/App.tsx`: add `'achievements'` to `ActiveTab` union and tabs array; add hidden-div render for `AchievementsTab`; add `pendingDialogs: AchievementId[]` local state; add `useEffect` (with `useRef` snapshot) to detect newly added entries in `state.unlockedAchievements` and enqueue them; render `AchievementDialog` for `pendingDialogs[0]`; on dismiss pop the queue
+- [X] T015 Write integration test in `tests/integration/achievementFlow.test.tsx`: dispatch `BUY_ICON` for apple → assert `state.unlockedAchievements` includes `'how-do-you-like-them-apples'`; dispatch `CLAIM` with a spin result containing 2 apple-family icons → assert `'second-breakfast'` added
 
 **Checkpoint**: Achievements tab renders; buying an apple triggers dialog; tab shows unlocked entry highlighted; all Phase 3 tests green
 
@@ -72,15 +72,15 @@
 
 ### ⚠️ Write Tests FIRST — confirm RED before implementing
 
-- [ ] T016 Write failing unit tests in `tests/unit/reducer.test.ts`: `BUY_ICON` blocked when `ownedCount * 2 >= reel.icons.length`; allowed and reel grows by 1 when `ownedCount * 2 < reel.icons.length`; odd-reel edge case (3/7 → succeeds → 4/8) — confirm FAIL before T017
+- [X] T016 Write failing unit tests in `tests/unit/reducer.test.ts`: `BUY_ICON` blocked when `ownedCount * 2 >= reel.icons.length`; allowed and reel grows by 1 when `ownedCount * 2 < reel.icons.length`; odd-reel edge case (3/7 → succeeds → 4/8) — confirm FAIL before T017
 
 ### Implementation
 
-- [ ] T017 Update `tryBuyIcon` in `src/game/reducer.ts`: change guard from `if (ownedCount >= 3)` to `if (ownedCount * 2 >= state.reel.icons.length)`
-- [ ] T018 [P] Update `src/components/Market.tsx`: compute `canBuyMore = ownedCount * 2 < reel.icons.length` per icon; pass `canBuyMore: boolean` to `MarketItem` (remove `remainingPurchasable: number`)
-- [ ] T019 [P] Update `src/components/MarketItem.tsx`: replace `remainingPurchasable: number` prop with `canBuyMore: boolean`; remove "N left" display line; set `atCap = !canBuyMore`
-- [ ] T020 Update `tests/integration/marketFlow.test.tsx`: remove hard-cap-of-3 assertions; add `qty*2 < reel_size` formula assertions; remove "N left" label assertions
-- [ ] T021 [P] Update `tests/unit/market.test.tsx`: add tests for even-reel cap (3/6 blocked, 2/6 allowed), odd-reel cap (3/7 allowed → 4/8 blocked), and reel-grows-by-1 on purchase
+- [X] T017 Update `tryBuyIcon` in `src/game/reducer.ts`: change guard from `if (ownedCount >= 3)` to `if (ownedCount * 2 >= state.reel.icons.length)`
+- [X] T018 [P] Update `src/components/Market.tsx`: compute `canBuyMore = ownedCount * 2 < reel.icons.length` per icon; pass `canBuyMore: boolean` to `MarketItem` (remove `remainingPurchasable: number`)
+- [X] T019 [P] Update `src/components/MarketItem.tsx`: replace `remainingPurchasable: number` prop with `canBuyMore: boolean`; remove "N left" display line; set `atCap = !canBuyMore`
+- [X] T020 Update `tests/integration/marketFlow.test.tsx`: remove hard-cap-of-3 assertions; add `qty*2 < reel_size` formula assertions; remove "N left" label assertions
+- [X] T021 [P] Update `tests/unit/market.test.tsx`: add tests for even-reel cap (3/6 blocked, 2/6 allowed), odd-reel cap (3/7 allowed → 4/8 blocked), and reel-grows-by-1 on purchase
 
 **Checkpoint**: Market buy button enables/disables per formula; "N left" label gone; all Phase 4 tests green
 
@@ -94,14 +94,14 @@
 
 ### ⚠️ Write Tests FIRST — confirm RED before implementing
 
-- [ ] T022 Write failing unit tests in `tests/unit/reducer.test.ts`: verify `SpinMultiplier` type is now `1` only (TypeScript-level); verify persistence migration clamps loaded `spinMultiplier: 10` to `1` — confirm FAIL before T023-T025
+- [X] T022 Write failing unit tests in `tests/unit/reducer.test.ts`: verify `SpinMultiplier` type is now `1` only (TypeScript-level); verify persistence migration clamps loaded `spinMultiplier: 10` to `1` — confirm FAIL before T023-T025
 
 ### Implementation
 
-- [ ] T023 Update `src/game/types.ts`: narrow `SpinMultiplier = 1`; change `SpinLogEntry.multiplier` type from `SpinMultiplier` to `number` (preserves historical log entries)
-- [ ] T024 Update `src/game/persistence.ts`: add migration step — if loaded `settings.spinMultiplier !== 1`, set to `1`
-- [ ] T025 Update `src/components/SpinControls.tsx`: remove `10` and `100` from the `MULTIPLIERS` array; confirm the x1 button remains and the component renders correctly
-- [ ] T026 Run `npm run typecheck` and resolve any remaining references to `SpinMultiplier` values `10` or `100` in reducer, tests, or other files
+- [X] T023 Update `src/game/types.ts`: narrow `SpinMultiplier = 1`; change `SpinLogEntry.multiplier` type from `SpinMultiplier` to `number` (preserves historical log entries)
+- [X] T024 Update `src/game/persistence.ts`: add migration step — if loaded `settings.spinMultiplier !== 1`, set to `1`
+- [X] T025 Update `src/components/SpinControls.tsx`: remove `10` and `100` from the `MULTIPLIERS` array; confirm the x1 button remains and the component renders correctly
+- [X] T026 Run `npm run typecheck` and resolve any remaining references to `SpinMultiplier` values `10` or `100` in reducer, tests, or other files
 
 **Checkpoint**: No x10/x100 UI; saved game with `spinMultiplier: 10` loads cleanly with `spinMultiplier: 1`; typecheck passes
 
@@ -115,13 +115,13 @@
 
 ### ⚠️ Write Tests FIRST — confirm RED before implementing
 
-- [ ] T027 Add failing unit test in `tests/unit/reducer.test.ts`: set crowns to 100 → dispatch `CLAIM` → assert `state.phase` remains `'market'`, not `'win'` — confirm FAIL before T028
+- [X] T027 Add failing unit test in `tests/unit/reducer.test.ts`: set crowns to 100 → dispatch `CLAIM` → assert `state.phase` remains `'market'`, not `'win'` — confirm FAIL before T028
 
 ### Implementation
 
-- [ ] T028 Update `src/game/currencyRegistry.ts`: set `crowns.winCondition: null`
-- [ ] T029 Add targeted tests in `tests/unit/achievements.test.ts`: state with `currencies.crowns = 300` → `checkNewAchievements` returns `'this-is-sparta'`; `currencies.crowns = 5000` → returns `'ancient-civilization'`; already unlocked → not returned again
-- [ ] T030 Verify backward compatibility: `WinModal` component remains in `src/components/WinModal.tsx` unchanged; `CONTINUE_AFTER_WIN` action still handled in reducer (for saved games with `phase: 'win'`)
+- [X] T028 Update `src/game/currencyRegistry.ts`: set `crowns.winCondition: null`
+- [X] T029 Add targeted tests in `tests/unit/achievements.test.ts`: state with `currencies.crowns = 300` → `checkNewAchievements` returns `'this-is-sparta'`; `currencies.crowns = 5000` → returns `'ancient-civilization'`; already unlocked → not returned again
+- [X] T030 Verify backward compatibility: `WinModal` component remains in `src/components/WinModal.tsx` unchanged; `CONTINUE_AFTER_WIN` action still handled in reducer (for saved games with `phase: 'win'`)
 
 **Checkpoint**: 100+ crowns → game continues; 300 crowns → "This is Sparta" dialog; 5000 crowns → "Ancient Civilization" dialog
 
@@ -135,8 +135,8 @@
 
 ### ⚠️ Write Tests FIRST — confirm RED before implementing (should pass via Phase 3 implementation)
 
-- [ ] T031 Add unit test in `tests/unit/achievements.test.ts`: pass `prevState` with 13 unlocked + `newState` with 14th non-meta ID just added → assert `checkNewAchievements` returns `['happily-ever-after']`; also test that it is NOT returned if already present in `unlockedAchievements`
-- [ ] T032 Add integration test in `tests/integration/achievementFlow.test.tsx`: simulate state with 14th achievement just added → assert `unlockedAchievements` includes `'happily-ever-after'`; assert both the 14th dialog and the "Happily Ever After" dialog are queued sequentially
+- [X] T031 Add unit test in `tests/unit/achievements.test.ts`: pass `prevState` with 13 unlocked + `newState` with 14th non-meta ID just added → assert `checkNewAchievements` returns `['happily-ever-after']`; also test that it is NOT returned if already present in `unlockedAchievements`
+- [X] T032 Add integration test in `tests/integration/achievementFlow.test.tsx`: simulate state with 14th achievement just added → assert `unlockedAchievements` includes `'happily-ever-after'`; assert both the 14th dialog and the "Happily Ever After" dialog are queued sequentially
 
 **Checkpoint**: Full 15-achievement system complete; "Happily Ever After" cascades correctly
 
@@ -146,14 +146,14 @@
 
 **Purpose**: Final cleanup and verification of all six pipeline gates.
 
-- [ ] T033 [P] Remove dead code: any remaining `masterOfElements` references in tests or comments; unused imports introduced during Phase 2-7
-- [ ] T034 **[GATE 1] Typecheck** — `npm run typecheck` (`tsc --noEmit`) exits 0 — fix all type errors before proceeding
-- [ ] T035 **[GATE 2] Lint** — `npm run lint` (ESLint) exits 0 with zero errors — fix all lint errors before proceeding
-- [ ] T036 **[GATE 3] Unit Tests** — `npm run test:unit` — all unit tests pass; new code ≥ 80% line coverage
-- [ ] T037 **[GATE 4] Integration Tests** — `npm run test:integration` — all integration tests pass
-- [ ] T038 **[GATE 5] Build** — `npm run build` — production bundle compiles without warnings treated as errors
-- [ ] T039 **[GATE 6] Bundle Size** — measure gzipped JS bundle size; confirm ≤ 250 KB; report delta (before/after) in PR description
-- [ ] T040 [P] Manual smoke test at 720 × 1280 px: verify Achievements tab renders, unlock dialog fires, market cap works, no x10/x100 buttons present — screenshot for PR description
+- [X] T033 [P] Remove dead code: any remaining `masterOfElements` references in tests or comments; unused imports introduced during Phase 2-7
+- [X] T034 **[GATE 1] Typecheck** — `npm run typecheck` (`tsc --noEmit`) exits 0 — fix all type errors before proceeding
+- [X] T035 **[GATE 2] Lint** — `npm run lint` (ESLint) exits 0 with zero errors — fix all lint errors before proceeding
+- [X] T036 **[GATE 3] Unit Tests** — `npm run test:unit` — all unit tests pass; new code ≥ 80% line coverage
+- [X] T037 **[GATE 4] Integration Tests** — `npm run test:integration` — all integration tests pass
+- [X] T038 **[GATE 5] Build** — `npm run build` — production bundle compiles without warnings treated as errors
+- [X] T039 **[GATE 6] Bundle Size** — measure gzipped JS bundle size; confirm ≤ 250 KB; report delta (before/after) in PR description
+- [X] T040 [P] Manual smoke test at 720 × 1280 px: verify Achievements tab renders, unlock dialog fires, market cap works, no x10/x100 buttons present — screenshot for PR description
 
 ---
 
