@@ -8,16 +8,17 @@ interface Props {
   onBuy: (definitionId: string) => void
 }
 
-function canAfford(def: IconDefinition, currencies: Currencies): boolean {
-  if (!def.cost) return false
-  const { currency: costKey, amount } = def.cost
-  if ((currencies[costKey] ?? 0) >= amount) return true
-  const costDef = CURRENCY_REGISTRY[costKey]
-  if (!costDef?.convertibleFrom) return false
-  const { currency: sourceKey, rate } = costDef.convertibleFrom
-  const shortfall = amount - (currencies[costKey] ?? 0)
-  const unitsNeeded = Math.ceil(shortfall / rate)
-  return (currencies[sourceKey] ?? 0) >= unitsNeeded
+function canAfford(currencies: Currencies, currency: string, amount: number): boolean {
+  if ((currencies[currency] ?? 0) >= amount) return true
+  const def = CURRENCY_REGISTRY[currency]
+  if (!def?.convertibleFrom) return false
+  const { currency: src, rate } = def.convertibleFrom
+  const unitsNeeded = Math.ceil((amount - (currencies[currency] ?? 0)) / rate)
+  return canAfford(currencies, src, unitsNeeded)
+}
+
+function canAffordMulti(costs: { currency: string; amount: number }[], currencies: Currencies): boolean {
+  return costs.every(({ currency, amount }) => canAfford(currencies, currency, amount))
 }
 
 function getAltPrice(costCurrency: string, amount: number): string | null {
@@ -31,11 +32,14 @@ function getAltPrice(costCurrency: string, amount: number): string | null {
 }
 
 export function MarketItem({ def, currencies, canBuyMore, onBuy }: Props) {
-  if (!def.cost) return null
-  const affordable = canAfford(def, currencies)
+  const isMultiCost = def.cost === null && def.multiCost !== null
+
+  if (def.cost === null && !isMultiCost) return null
+
+  const affordable = isMultiCost
+    ? canAffordMulti(def.multiCost!, currencies)
+    : canAfford(currencies, def.cost!.currency, def.cost!.amount)
   const atCap = !canBuyMore
-  const costDef = CURRENCY_REGISTRY[def.cost.currency]
-  const altPrice = getAltPrice(def.cost.currency, def.cost.amount)
 
   return (
     <div className="flex items-center justify-between p-2 bg-gray-700 rounded-lg">
@@ -43,11 +47,22 @@ export function MarketItem({ def, currencies, canBuyMore, onBuy }: Props) {
         <span className="icon-cell">{def.label}</span>
         <div>
           <p className="text-sm font-medium">{def.label}</p>
-          <p className="text-xs text-gray-400">
-            {def.cost.amount} {costDef?.label ?? def.cost.currency}
-          </p>
-          {altPrice && (
-            <p className="text-xs text-gray-500">{altPrice}</p>
+          {isMultiCost ? (
+            <p className="text-xs text-gray-400">
+              {def.multiCost!.map((c) => {
+                const reg = CURRENCY_REGISTRY[c.currency]
+                return `${c.amount} ${reg?.label ?? c.currency}`
+              }).join(' + ')}
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-gray-400">
+                {def.cost!.amount} {CURRENCY_REGISTRY[def.cost!.currency]?.label ?? def.cost!.currency}
+              </p>
+              {getAltPrice(def.cost!.currency, def.cost!.amount) && (
+                <p className="text-xs text-gray-500">{getAltPrice(def.cost!.currency, def.cost!.amount)}</p>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -86,7 +86,7 @@ describe('prestige flow integration', () => {
     expect(defIds).toEqual(['air', 'apple', 'copper', 'water'])
     expect(nextState.spinCount).toBe(42)
     expect(nextState.currencies.food).toBe(PRESTIGE_STARTING_CURRENCIES.food)
-    expect(nextState.currencies.copper).toBe(0)
+    expect(nextState.currencies.copper).toBe(10)
     expect(nextState.currencies.silver).toBe(0)
   })
 

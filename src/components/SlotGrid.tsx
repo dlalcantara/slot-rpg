@@ -2,13 +2,13 @@ import type { SpinResult, Icon, Reel, MagicCell, GameAction, MagicMode } from '.
 import { ReelColumn } from './ReelColumn'
 
 const PLACEHOLDER_ICON: Icon = { id: 'ph', definitionId: 'blank' }
-const PLACEHOLDER_COL = [PLACEHOLDER_ICON, PLACEHOLDER_ICON, PLACEHOLDER_ICON]
 
 interface Props {
   lastSpinResult: SpinResult | null
   magicGrid: MagicCell[][] | null
   blockedColumns: number[]
   reel: Reel
+  rowCount: number
   spinning: boolean
   animate: boolean
   isMagicPhase: boolean
@@ -49,6 +49,7 @@ export function SlotGrid({
   magicGrid,
   blockedColumns,
   reel,
+  rowCount,
   spinning,
   animate,
   isMagicPhase,
@@ -60,9 +61,10 @@ export function SlotGrid({
   onModeChange = () => {},
   onSwapFrom = () => {},
 }: Props) {
+  const placeholderCol = Array(rowCount).fill(PLACEHOLDER_ICON)
   const displayColumns: Icon[][] = magicGrid
     ? magicGrid.map((col) => col.map((cell) => cell.icon))
-    : (lastSpinResult?.columns ?? Array(5).fill(PLACEHOLDER_COL))
+    : (lastSpinResult?.columns ?? Array(5).fill(placeholderCol))
 
   const valueOverrides: Map<string, number> = isMagicPhase && magicGrid
     ? (() => {

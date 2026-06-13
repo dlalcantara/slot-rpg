@@ -82,6 +82,15 @@ export const CURRENCY_REGISTRY: Record<string, CurrencyDefinition> = {
     winCondition: null,
     lossCondition: null,
   },
+  energy: {
+    key: 'energy',
+    label: 'Energy',
+    startingAmount: 0,
+    autoConvertTo: null,
+    convertibleFrom: null,
+    winCondition: null,
+    lossCondition: null,
+  },
 }
 
 export const CURRENCY_ORDER = ['food', 'gold', 'silver', 'copper', 'crowns', 'air', 'water', 'earth', 'fire']

@@ -4,7 +4,7 @@ import { Market } from '@/components/Market'
 
 const emptyCurrencies = {
   food: 0, copper: 0, silver: 0, gold: 0, crowns: 0,
-  air: 0, water: 0, earth: 0, fire: 0,
+  air: 0, water: 0, earth: 0, fire: 0, energy: 0,
 }
 
 describe('Market ordering (US6)', () => {

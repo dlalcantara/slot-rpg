@@ -11,9 +11,10 @@ export const PRESTIGE_STARTING_CURRENCIES: Record<string, number> = {
   food: 10,
   air: 10,
   water: 10,
+  copper: 10,
   ...Object.fromEntries(
     Object.keys(CURRENCY_REGISTRY)
-      .filter((k) => k !== 'food' && k !== 'air' && k !== 'water')
+      .filter((k) => k !== 'food' && k !== 'air' && k !== 'water' && k !== 'copper')
       .map((k) => [k, 0])
   ),
 }
@@ -40,6 +41,8 @@ export function makeInitialState(): GameState {
     magicCounters: { respin: 0, swap: 0, increaseValue: 0 },
     unlockedAchievements: [],
     pendingMultiplier: 1,
+    rowCount: 3,
+    initialSpinPayouts: null,
   }
 }
 

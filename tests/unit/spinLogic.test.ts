@@ -69,6 +69,37 @@ describe('drawColumn', () => {
     const column = drawColumn(reel)
     expect(column).toHaveLength(3)
   })
+
+  it('returns exactly 4 icons when rowCount=4', () => {
+    const reel = makeReel(['apple', 'copper', 'blank', 'apple', 'copper'])
+    const column = drawColumn(reel, 4)
+    expect(column).toHaveLength(4)
+  })
+
+  it('returns exactly 5 icons when rowCount=5', () => {
+    const reel = makeReel(['apple', 'copper', 'blank', 'apple', 'copper'])
+    const column = drawColumn(reel, 5)
+    expect(column).toHaveLength(5)
+  })
+
+  it('wraps correctly for rowCount=4 (all icons from reel)', () => {
+    const reel = makeReel(['apple', 'copper', 'blank', 'apple', 'copper'])
+    const validIds = new Set(['apple', 'copper', 'blank'])
+    const column = drawColumn(reel, 4)
+    column.forEach((icon) => expect(validIds.has(icon.definitionId)).toBe(true))
+  })
+
+  it('wraps correctly for rowCount=5 (all icons from reel)', () => {
+    const reel = makeReel(['apple', 'copper', 'blank', 'apple', 'copper'])
+    const validIds = new Set(['apple', 'copper', 'blank'])
+    const column = drawColumn(reel, 5)
+    column.forEach((icon) => expect(validIds.has(icon.definitionId)).toBe(true))
+  })
+
+  it('existing 3-row behavior still passes with rowCount=3', () => {
+    const reel = makeReel(['apple', 'copper', 'blank'])
+    expect(drawColumn(reel, 3)).toHaveLength(3)
+  })
 })
 
 describe('calculatePayouts', () => {

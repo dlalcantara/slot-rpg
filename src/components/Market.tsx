@@ -11,6 +11,9 @@ interface Props {
 const TIER_WEIGHT: Record<string, number> = { copper: 1, silver: 100, gold: 10000 }
 
 function normalizedPrice(def: IconDefinition): number {
+  if (def.multiCost) {
+    return Math.max(...def.multiCost.map((c) => (TIER_WEIGHT[c.currency] ?? 0) * c.amount))
+  }
   if (!def.cost) return 0
   return (TIER_WEIGHT[def.cost.currency] ?? 0) * def.cost.amount
 }
@@ -22,7 +25,7 @@ export function Market({ currencies, reel, onBuy }: Props) {
   }
 
   const forSale = Object.values(ICON_CATALOG)
-    .filter((def) => def.cost !== null)
+    .filter((def) => def.cost !== null || def.multiCost !== null)
     .sort((a, b) => normalizedPrice(a) - normalizedPrice(b))
 
   return (
@@ -31,7 +34,9 @@ export function Market({ currencies, reel, onBuy }: Props) {
       <div role="list" className="flex flex-col gap-2 max-h-64 overflow-y-auto">
         {forSale.map((def) => {
           const ownedCount = ownedCounts.get(def.definitionId) ?? 0
-          const canBuyMore = ownedCount * 2 < reel.icons.length
+          const canBuyMore = def.multiCost !== null
+            ? ownedCount * 2 < reel.icons.length
+            : ownedCount * 2 < reel.icons.length
           return (
             <div key={def.definitionId} role="listitem">
               <MarketItem

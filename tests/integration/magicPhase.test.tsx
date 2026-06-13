@@ -131,6 +131,7 @@ function GridWrapper({ initialState }: { initialState: GameState }) {
         magicGrid={state.magicGrid}
         blockedColumns={state.blockedColumns}
         reel={state.reel}
+        rowCount={state.rowCount ?? 3}
         spinning={false}
         animate={false}
         isMagicPhase={isMagicPhase}

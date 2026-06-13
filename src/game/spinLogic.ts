@@ -10,20 +10,20 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-function extractColumn(icons: Icon[], startOffset: number): Icon[] {
+function extractColumn(icons: Icon[], startOffset: number, rowCount: number): Icon[] {
   const len = icons.length
-  return [
-    icons[startOffset % len],
-    icons[(startOffset + 1) % len],
-    icons[(startOffset + 2) % len],
-  ]
+  const result: Icon[] = []
+  for (let i = 0; i < rowCount; i++) {
+    result.push(icons[(startOffset + i) % len])
+  }
+  return result
 }
 
-export function drawColumn(reel: Reel): Icon[] {
+export function drawColumn(reel: Reel, rowCount = 3): Icon[] {
   const pool = reel.icons.length > 0 ? reel.icons : reel.icons
   const shuffled = shuffle(pool)
   const offset = Math.floor(Math.random() * shuffled.length)
-  return extractColumn(shuffled, offset)
+  return extractColumn(shuffled, offset, rowCount)
 }
 
 export function calculatePayouts(
@@ -60,10 +60,10 @@ export function calculatePayouts(
   return payouts
 }
 
-export function computeSpin(reel: Reel): SpinResult {
+export function computeSpin(reel: Reel, rowCount = 3): SpinResult {
   const columns: Icon[][] = []
   for (let i = 0; i < 5; i++) {
-    columns.push(drawColumn(reel))
+    columns.push(drawColumn(reel, rowCount))
   }
   const payouts = calculatePayouts(columns)
   return { columns, payouts }

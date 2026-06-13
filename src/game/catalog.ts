@@ -8,6 +8,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: '[ ]',
     effect: { type: 'none' },
     cost: null,
+    multiCost: null,
   },
   apple: {
     definitionId: 'apple',
@@ -16,6 +17,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: 'Apple',
     effect: { type: 'add_currency', currency: 'food', valuePerColumn: 1 },
     cost: { currency: 'copper', amount: 1 },
+    multiCost: null,
   },
   'triple-apple': {
     definitionId: 'triple-apple',
@@ -24,6 +26,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: '2× Apple',
     effect: { type: 'add_currency', currency: 'food', valuePerColumn: 2 },
     cost: { currency: 'silver', amount: 1 },
+    multiCost: null,
   },
   'dozen-apple': {
     definitionId: 'dozen-apple',
@@ -32,6 +35,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: '3× Apple',
     effect: { type: 'add_currency', currency: 'food', valuePerColumn: 3 },
     cost: { currency: 'gold', amount: 1 },
+    multiCost: null,
   },
   copper: {
     definitionId: 'copper',
@@ -40,6 +44,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: 'Copper',
     effect: { type: 'add_currency', currency: 'copper', valuePerColumn: 1 },
     cost: { currency: 'copper', amount: 1 },
+    multiCost: null,
   },
   silver: {
     definitionId: 'silver',
@@ -48,6 +53,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: 'Silver',
     effect: { type: 'add_currency', currency: 'silver', valuePerColumn: 1 },
     cost: { currency: 'silver', amount: 1 },
+    multiCost: null,
   },
   gold: {
     definitionId: 'gold',
@@ -56,6 +62,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: 'Gold',
     effect: { type: 'add_currency', currency: 'gold', valuePerColumn: 1 },
     cost: { currency: 'gold', amount: 1 },
+    multiCost: null,
   },
   crown: {
     definitionId: 'crown',
@@ -64,6 +71,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: 'Crown',
     effect: { type: 'add_currency', currency: 'crowns', valuePerColumn: 1 },
     cost: { currency: 'gold', amount: 100 },
+    multiCost: null,
   },
   air: {
     definitionId: 'air',
@@ -72,6 +80,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: 'Air',
     effect: { type: 'add_currency', currency: 'air', valuePerColumn: 1 },
     cost: { currency: 'copper', amount: 1 },
+    multiCost: null,
   },
   water: {
     definitionId: 'water',
@@ -80,6 +89,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: 'Water',
     effect: { type: 'add_currency', currency: 'water', valuePerColumn: 1 },
     cost: { currency: 'copper', amount: 1 },
+    multiCost: null,
   },
   earth: {
     definitionId: 'earth',
@@ -88,6 +98,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: 'Earth',
     effect: { type: 'add_currency', currency: 'earth', valuePerColumn: 1 },
     cost: { currency: 'silver', amount: 1 },
+    multiCost: null,
   },
   fire: {
     definitionId: 'fire',
@@ -96,5 +107,21 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     label: 'Fire',
     effect: { type: 'add_currency', currency: 'fire', valuePerColumn: 1 },
     cost: { currency: 'gold', amount: 1 },
+    multiCost: null,
+  },
+  energy: {
+    definitionId: 'energy',
+    family: 'energy',
+    valuePerColumn: 1,
+    label: 'Energy',
+    effect: { type: 'add_currency', currency: 'energy', valuePerColumn: 1 },
+    cost: null,
+    multiCost: [
+      { currency: 'gold', amount: 1 },
+      { currency: 'air', amount: 1 },
+      { currency: 'water', amount: 1 },
+      { currency: 'earth', amount: 1 },
+      { currency: 'fire', amount: 1 },
+    ],
   },
 }

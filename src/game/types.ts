@@ -1,4 +1,4 @@
-export type CurrencyKey = 'food' | 'copper' | 'silver' | 'gold' | 'crowns' | 'air' | 'water' | 'earth' | 'fire'
+export type CurrencyKey = 'food' | 'copper' | 'silver' | 'gold' | 'crowns' | 'air' | 'water' | 'earth' | 'fire' | 'energy'
 
 export type IconEffect =
   | { type: 'add_currency'; currency: CurrencyKey; valuePerColumn: number }
@@ -11,6 +11,7 @@ export interface IconDefinition {
   label: string
   effect: IconEffect
   cost: { currency: CurrencyKey; amount: number } | null
+  multiCost: { currency: CurrencyKey; amount: number }[] | null
 }
 
 export interface Icon {
@@ -64,7 +65,7 @@ export interface SpinResult {
   payouts: Payout[]
 }
 
-export type GamePhase = 'market' | 'spinning' | 'magic' | 'gameover' | 'win'
+export type GamePhase = 'market' | 'spinning' | 'magic' | 'gameover' | 'win' | 'starvation'
 
 export type SpinMultiplier = 1
 
@@ -112,6 +113,8 @@ export interface GameState {
   magicCounters: MagicCounters
   unlockedAchievements: import('./achievements').AchievementId[]
   pendingMultiplier: SpinMultiplier
+  rowCount: 3 | 4 | 5
+  initialSpinPayouts: Payout[] | null
 }
 
 export type MagicMode = 'respin' | 'swap' | 'block' | 'increaseValue' | null
@@ -131,3 +134,4 @@ export type GameAction =
   | { type: 'UPDATE_SETTINGS'; patch: Partial<PlayerSettings> }
   | { type: 'SET_CURRENCY'; currency: CurrencyKey; amount: number }
   | { type: 'PRESTIGE'; keepDefinitionIds: string[] }
+  | { type: 'DISMISS_STARVATION' }

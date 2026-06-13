@@ -17,6 +17,7 @@ import { MagicPhasePanel } from './components/MagicPhasePanel'
 import { CheatPanel } from './components/CheatPanel'
 import { AchievementsTab } from './components/AchievementsTab'
 import { AchievementDialog } from './components/AchievementDialog'
+import { StarvationModal } from './components/StarvationModal'
 import type { Currencies, MagicMode, SpinResult } from './game/types'
 import type { AchievementId } from './game/achievements'
 
@@ -185,6 +186,7 @@ export default function App() {
             magicGrid={state.magicGrid}
             blockedColumns={state.blockedColumns}
             reel={state.reel}
+            rowCount={state.rowCount}
             spinning={spinning}
             animate={state.settings.animate}
             onSpinDone={handleSpinDone}
@@ -250,6 +252,9 @@ export default function App() {
         </div>
 
         {state.phase === 'gameover' && <GameOverScreen onReset={handleReset} />}
+        {state.phase === 'starvation' && (
+          <StarvationModal onDismiss={() => dispatch({ type: 'DISMISS_STARVATION' })} />
+        )}
         {state.phase === 'win' && (
           <WinModal onContinue={handleContinue} onReset={handleReset} />
         )}

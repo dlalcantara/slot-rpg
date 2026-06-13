@@ -21,7 +21,7 @@ const COLOR: Record<string, string> = {
 export function CurrencyDisplay({ currencies, spinCount }: Props) {
   return (
     <div className="flex flex-wrap gap-3 justify-center p-3 bg-gray-800 rounded-xl border border-gray-700">
-      {CURRENCY_ORDER.map((key) => {
+      {CURRENCY_ORDER.filter((key) => key !== 'energy').map((key) => {
         const def = CURRENCY_REGISTRY[key]
         if (!def) return null
         return (

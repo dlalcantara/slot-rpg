@@ -71,16 +71,30 @@ function ensureLiquidity(
 
 function tryBuyIcon(state: GameState, iconDefinitionId: string): GameState {
   const def = ICON_CATALOG[iconDefinitionId]
-  if (!def || !def.cost) return state
+  if (!def) return state
+  if (!def.cost && !def.multiCost) return state
 
   const ownedCount = state.reel.icons.filter((i) => i.definitionId === iconDefinitionId).length
   if (ownedCount * 2 >= state.reel.icons.length) return state
 
-  const { currency: costCurrency, amount: costAmount } = def.cost
-  const funded = ensureLiquidity({ ...state.currencies }, costCurrency, costAmount)
-  if (!funded) return state
+  let currencies: Currencies
+  if (def.multiCost) {
+    let funded: Currencies | null = { ...state.currencies }
+    for (const { currency: costCurrency, amount: costAmount } of def.multiCost) {
+      funded = ensureLiquidity(funded!, costCurrency, costAmount)
+      if (!funded) return state
+    }
+    currencies = { ...funded }
+    for (const { currency: costCurrency, amount: costAmount } of def.multiCost) {
+      currencies[costCurrency] = (currencies[costCurrency] ?? 0) - costAmount
+    }
+  } else {
+    const { currency: costCurrency, amount: costAmount } = def.cost!
+    const funded = ensureLiquidity({ ...state.currencies }, costCurrency, costAmount)
+    if (!funded) return state
+    currencies = { ...funded, [costCurrency]: funded[costCurrency] - costAmount }
+  }
 
-  const currencies = { ...funded, [costCurrency]: funded[costCurrency] - costAmount }
   const newIcon = { id: crypto.randomUUID(), definitionId: iconDefinitionId }
   const newState: GameState = {
     ...state,
@@ -131,10 +145,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const newColumns: Icon[][] = []
       for (let i = 0; i < 5; i++) {
-        newColumns.push(drawColumn(state.reel))
+        newColumns.push(drawColumn(state.reel, state.rowCount))
       }
 
       const magicGrid: MagicCell[][] = newColumns.map(iconsToMagicCells)
+      const spinPayouts = calculatePayouts(newColumns)
 
       const newState: GameState = {
         ...state,
@@ -143,6 +158,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         magicGrid,
         pendingMultiplier: multiplier,
         spinCount: state.spinCount + 1,
+        initialSpinPayouts: spinPayouts,
       }
       saveState(newState)
       return newState
@@ -166,7 +182,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const cost = (state.magicCounters.respin + 1) * state.pendingMultiplier
       if ((state.currencies.air ?? 0) < cost) return state
 
-      const newColumn = iconsToMagicCells(drawColumn(state.reel))
+      const newColumn = iconsToMagicCells(drawColumn(state.reel, state.rowCount))
       const newGrid = state.magicGrid.map((col, i) => i === colIdx ? newColumn : col)
 
       const newState: GameState = {
@@ -259,6 +275,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       let currencies: Currencies = { ...state.currencies }
       for (const payout of rawPayouts) {
+        // energy is not added to currencies — it only drives row expansion
+        if (payout.currency === 'energy') continue
         currencies[payout.currency] = (currencies[payout.currency] ?? 0) + payout.amount * multiplier
       }
 
@@ -268,6 +286,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const phase = checkPhase(currencies)
       const scaledPayouts = rawPayouts.map((p) => ({ ...p, amount: p.amount * multiplier }))
+      const claimPayouts = scaledPayouts
+
+      // Row expansion from energy payout
+      const energyAmount = scaledPayouts.find((p) => p.currency === 'energy')?.amount ?? 0
+      let rowCount = state.rowCount
+      if (energyAmount >= 69) rowCount = Math.max(rowCount, 5) as 3 | 4 | 5
+      else if (energyAmount >= 16) rowCount = Math.max(rowCount, 4) as 3 | 4 | 5
+
       const logEntry: SpinLogEntry = {
         spinNumber: state.spinCount,
         multiplier,
@@ -276,16 +302,44 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
       const gameLog = [logEntry, ...state.gameLog].slice(0, 10)
 
+      // Auto-prestige on food=0 (starvation)
+      if (phase === 'gameover') {
+        const starvationState: GameState = {
+          ...state,
+          reel: {
+            icons: [
+              { id: crypto.randomUUID(), definitionId: 'apple' },
+              { id: crypto.randomUUID(), definitionId: 'copper' },
+              { id: crypto.randomUUID(), definitionId: 'air' },
+              { id: crypto.randomUUID(), definitionId: 'water' },
+            ],
+          },
+          currencies: { ...PRESTIGE_STARTING_CURRENCIES },
+          rowCount: 3,
+          phase: 'starvation',
+          lastSpinResult: { columns: allIconColumns, payouts: scaledPayouts },
+          magicGrid: null,
+          blockedColumns: [],
+          gameLog,
+          initialSpinPayouts: null,
+          // unlockedAchievements preserved from state
+        }
+        saveState(starvationState)
+        return starvationState
+      }
+
       const baseState: GameState = {
         ...state,
         currencies,
         phase,
+        rowCount,
         lastSpinResult: { columns: allIconColumns, payouts: scaledPayouts },
         magicGrid: null,
         blockedColumns: [],
         gameLog,
+        initialSpinPayouts: null,
       }
-      const newlyUnlocked = checkNewAchievements(state, baseState, { type: 'CLAIM' })
+      const newlyUnlocked = checkNewAchievements(state, baseState, { type: 'CLAIM' }, claimPayouts)
       const newState: GameState = newlyUnlocked.length > 0
         ? { ...baseState, unlockedAchievements: [...new Set([...baseState.unlockedAchievements, ...newlyUnlocked])] }
         : baseState
@@ -318,11 +372,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         magicCounters: { respin: 0, swap: 0, increaseValue: 0 },
         pendingMultiplier: 1,
         gameLog: [],
+        rowCount: 3,
+        initialSpinPayouts: null,
       }
       const newlyUnlockedPrestige = checkNewAchievements(state, basePrestigeState, { type: 'PRESTIGE', keepDefinitionIds })
       const newState: GameState = newlyUnlockedPrestige.length > 0
         ? { ...basePrestigeState, unlockedAchievements: [...new Set([...basePrestigeState.unlockedAchievements, ...newlyUnlockedPrestige])] }
         : basePrestigeState
+      saveState(newState)
+      return newState
+    }
+
+    case 'DISMISS_STARVATION': {
+      if (state.phase !== 'starvation') return state
+      const newState: GameState = { ...state, phase: 'market', initialSpinPayouts: null }
       saveState(newState)
       return newState
     }

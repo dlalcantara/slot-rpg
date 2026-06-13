@@ -39,8 +39,8 @@ describe('ACHIEVEMENTS catalog', () => {
     expect(ACHIEVEMENTS).toHaveLength(15)
   })
 
-  it('has exactly 2 WIP achievements', () => {
-    expect(ACHIEVEMENTS.filter((a) => a.isWip)).toHaveLength(2)
+  it('has exactly 0 WIP achievements (sweet, nice, blow-it-up replaced wip1/wip2)', () => {
+    expect(ACHIEVEMENTS.filter((a) => a.isWip)).toHaveLength(0)
   })
 
   it('has happily-ever-after as the last entry', () => {
@@ -76,31 +76,19 @@ describe('checkNewAchievements — how-do-you-like-them-apples', () => {
 // ─── second-breakfast ────────────────────────────────────────────────────────
 
 describe('checkNewAchievements — second-breakfast', () => {
-  it('earned when ≥2 apple-family icons appear in spin result', () => {
-    const grid = makeGrid([
-      ['apple', 'blank', 'blank'],
-      ['apple', 'blank', 'blank'],
-      ['blank', 'blank', 'blank'],
-      ['blank', 'blank', 'blank'],
-      ['blank', 'blank', 'blank'],
-    ])
+  it('earned when apple-family payout amount ≥2', () => {
+    const grid = makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']])
     const prev = magicStateWith(grid)
     const next = baseState()
-    const result = checkNewAchievements(prev, next, { type: 'CLAIM' })
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, [{ family: 'apple', amount: 2, currency: 'food' }])
     expect(result).toContain('second-breakfast')
   })
 
-  it('not earned when only 1 apple-family icon in spin result', () => {
-    const grid = makeGrid([
-      ['apple', 'blank', 'blank'],
-      ['blank', 'blank', 'blank'],
-      ['blank', 'blank', 'blank'],
-      ['blank', 'blank', 'blank'],
-      ['blank', 'blank', 'blank'],
-    ])
+  it('not earned when apple-family payout amount = 1', () => {
+    const grid = makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']])
     const prev = magicStateWith(grid)
     const next = baseState()
-    const result = checkNewAchievements(prev, next, { type: 'CLAIM' })
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, [{ family: 'apple', amount: 1, currency: 'food' }])
     expect(result).not.toContain('second-breakfast')
   })
 })
@@ -366,51 +354,235 @@ describe('checkNewAchievements — this-is-sparta', () => {
 
 // ─── ancient-civilization ────────────────────────────────────────────────────
 
-describe('checkNewAchievements — ancient-civilization', () => {
-  it('earned when newState.currencies.crowns >= 5000', () => {
+describe('ancient-civilization removed', () => {
+  it('5000 crowns does NOT earn ancient-civilization (achievement removed)', () => {
     const prev = magicStateWith(makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']]))
     const next = baseState({ currencies: { ...makeInitialState().currencies, crowns: 5000 } })
     const result = checkNewAchievements(prev, next, { type: 'CLAIM' })
-    expect(result).toContain('ancient-civilization')
+    expect(result).not.toContain('blow-it-up')
+  })
+})
+
+// ─── second-breakfast payout-based fix (T026) ────────────────────────────────
+
+describe('checkNewAchievements — second-breakfast payout check (T026)', () => {
+  it('NOT earned when apple-family payout amount = 1 (even if 2 apple icons in grid)', () => {
+    const grid = makeGrid([
+      ['apple', 'blank', 'blank'],
+      ['apple', 'blank', 'blank'],
+      ['blank', 'blank', 'blank'],
+      ['blank', 'blank', 'blank'],
+      ['blank', 'blank', 'blank'],
+    ])
+    const prev = magicStateWith(grid)
+    const next = baseState()
+    const claimPayouts = [{ family: 'apple', amount: 1, currency: 'food' }]
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
+    expect(result).not.toContain('second-breakfast')
   })
 
-  it('already unlocked → not returned again', () => {
-    const prev = magicStateWith(makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']]))
-    prev.unlockedAchievements = ['ancient-civilization']
-    const next = baseState({ currencies: { ...makeInitialState().currencies, crowns: 5000 }, ...stateWithUnlocked(['ancient-civilization']) })
-    const result = checkNewAchievements(prev, next, { type: 'CLAIM' })
-    expect(result).not.toContain('ancient-civilization')
+  it('earned when apple-family payout amount = 2', () => {
+    const grid = makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']])
+    const prev = magicStateWith(grid)
+    const next = baseState()
+    const claimPayouts = [{ family: 'apple', amount: 2, currency: 'food' }]
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
+    expect(result).toContain('second-breakfast')
+  })
+
+  it('apple icons in grid but payout=1 → NOT earned', () => {
+    const grid = makeGrid([
+      ['apple', 'blank', 'blank'],
+      ['apple', 'blank', 'blank'],
+      ['apple', 'blank', 'blank'],
+      ['apple', 'blank', 'blank'],
+      ['apple', 'blank', 'blank'],
+    ])
+    const prev = magicStateWith(grid)
+    const next = baseState()
+    const claimPayouts = [{ family: 'apple', amount: 1, currency: 'food' }]
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
+    expect(result).not.toContain('second-breakfast')
+  })
+})
+
+// ─── master-of-elements payout-based fix (T027) ───────────────────────────────
+
+describe('checkNewAchievements — master-of-elements payout check (T027)', () => {
+  it('NOT earned when only 3 of 4 element families in claimPayouts', () => {
+    const grid = makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']])
+    const prev = magicStateWith(grid)
+    const next = baseState()
+    const claimPayouts = [
+      { family: 'air', amount: 1, currency: 'air' },
+      { family: 'water', amount: 1, currency: 'water' },
+      { family: 'earth', amount: 1, currency: 'earth' },
+    ]
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
+    expect(result).not.toContain('master-of-elements')
+  })
+
+  it('earned when all 4 element families in claimPayouts', () => {
+    const grid = makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']])
+    const prev = magicStateWith(grid)
+    const next = baseState()
+    const claimPayouts = [
+      { family: 'air', amount: 1, currency: 'air' },
+      { family: 'water', amount: 1, currency: 'water' },
+      { family: 'earth', amount: 1, currency: 'earth' },
+      { family: 'fire', amount: 1, currency: 'fire' },
+    ]
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
+    expect(result).toContain('master-of-elements')
+  })
+
+  it('all 4 elements in spin grid but only 3 produce payout → NOT earned', () => {
+    const grid = makeGrid([
+      ['air', 'blank', 'blank'],
+      ['water', 'blank', 'blank'],
+      ['earth', 'blank', 'blank'],
+      ['fire', 'blank', 'blank'],
+      ['blank', 'blank', 'blank'],
+    ])
+    const prev = magicStateWith(grid)
+    const next = baseState()
+    const claimPayouts = [
+      { family: 'air', amount: 1, currency: 'air' },
+      { family: 'water', amount: 1, currency: 'water' },
+      { family: 'earth', amount: 1, currency: 'earth' },
+    ]
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
+    expect(result).not.toContain('master-of-elements')
+  })
+})
+
+// ─── i-understand-it-now description fix (T029) ───────────────────────────────
+
+describe('i-understand-it-now description (T029)', () => {
+  it('description equals "Prestige keeping an icon that costs at least 1 silver"', () => {
+    const achievement = ACHIEVEMENTS.find((a) => a.id === 'i-understand-it-now')
+    expect(achievement?.description).toBe('Prestige keeping an icon that costs at least 1 silver')
+  })
+})
+
+// ─── blow-it-up (T033) ───────────────────────────────────────────────────────
+
+describe('checkNewAchievements — blow-it-up (T033)', () => {
+  function blowItUpState(options: {
+    prevPhase?: 'magic' | 'spinning'
+    initialTotal?: number
+    claimTotal?: number
+  }) {
+    const { prevPhase = 'magic', initialTotal = 5, claimTotal = 8 } = options
+    const grid = makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']])
+    const initialPayouts = initialTotal > 0 ? [{ family: 'food', amount: initialTotal, currency: 'food' }] : []
+    const prev = { ...magicStateWith(grid), phase: prevPhase as 'magic', initialSpinPayouts: initialPayouts }
+    const next = baseState()
+    const claimPayouts = [{ family: 'food', amount: claimTotal, currency: 'food' }]
+    return { prev, next, claimPayouts }
+  }
+
+  it('earned when magic was used, initial total=5, claim total=8', () => {
+    const { prev, next, claimPayouts } = blowItUpState({ prevPhase: 'magic', initialTotal: 5, claimTotal: 8 })
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
+    expect(result).toContain('blow-it-up')
+  })
+
+  it('NOT earned when claim total equals initial total (not strictly more)', () => {
+    const { prev, next, claimPayouts } = blowItUpState({ prevPhase: 'magic', initialTotal: 5, claimTotal: 5 })
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
+    expect(result).not.toContain('blow-it-up')
+  })
+
+  it('NOT earned when claim total is less than initial total', () => {
+    const { prev, next, claimPayouts } = blowItUpState({ prevPhase: 'magic', initialTotal: 5, claimTotal: 3 })
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
+    expect(result).not.toContain('blow-it-up')
+  })
+
+  it('NOT earned when magic was not used (prevPhase=spinning)', () => {
+    const { prev, next, claimPayouts } = blowItUpState({ prevPhase: 'spinning', initialTotal: 5, claimTotal: 8 })
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
+    expect(result).not.toContain('blow-it-up')
+  })
+
+  it('NOT earned when initial spin was zero', () => {
+    const { prev, next, claimPayouts } = blowItUpState({ prevPhase: 'magic', initialTotal: 0, claimTotal: 5 })
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
+    expect(result).not.toContain('blow-it-up')
+  })
+})
+
+// ─── sweet / nice (T008) ─────────────────────────────────────────────────────
+
+describe('checkNewAchievements — sweet / nice', () => {
+  function claimStateWithEnergy(energy: number): { prev: GameState; next: GameState } {
+    const grid = makeGrid([
+      ['blank', 'blank', 'blank'],
+      ['blank', 'blank', 'blank'],
+      ['blank', 'blank', 'blank'],
+      ['blank', 'blank', 'blank'],
+      ['blank', 'blank', 'blank'],
+    ])
+    const prev = magicStateWith(grid)
+    const next = baseState({ initialSpinPayouts: [{ family: 'energy', amount: energy, currency: 'energy' }] })
+    return { prev, next }
+  }
+
+  it('sweet earned when claimPayouts energy amount = 16', () => {
+    const { prev, next } = claimStateWithEnergy(16)
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, [{ family: 'energy', amount: 16, currency: 'energy' }])
+    expect(result).toContain('sweet')
+  })
+
+  it('nice earned when claimPayouts energy amount = 69', () => {
+    const { prev, next } = claimStateWithEnergy(69)
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, [{ family: 'energy', amount: 69, currency: 'energy' }])
+    expect(result).toContain('nice')
+  })
+
+  it('both sweet and nice earned when energy = 69 (first ever spin)', () => {
+    const { prev, next } = claimStateWithEnergy(69)
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, [{ family: 'energy', amount: 69, currency: 'energy' }])
+    expect(result).toContain('sweet')
+    expect(result).toContain('nice')
+  })
+
+  it('neither earned when energy = 15', () => {
+    const { prev, next } = claimStateWithEnergy(15)
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, [{ family: 'energy', amount: 15, currency: 'energy' }])
+    expect(result).not.toContain('sweet')
+    expect(result).not.toContain('nice')
   })
 })
 
 // ─── master-of-elements ───────────────────────────────────────────────────────
 
 describe('checkNewAchievements — master-of-elements', () => {
-  it('earned when all 4 element families appear in active spin result (≥1 each)', () => {
-    const grid = makeGrid([
-      ['air', 'blank', 'blank'],
-      ['water', 'blank', 'blank'],
-      ['earth', 'blank', 'blank'],
-      ['fire', 'blank', 'blank'],
-      ['air', 'blank', 'blank'],
-    ])
+  it('earned when all 4 element families appear in claimPayouts', () => {
+    const grid = makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']])
     const prev = magicStateWith(grid)
     const next = baseState()
-    const result = checkNewAchievements(prev, next, { type: 'CLAIM' })
+    const claimPayouts = [
+      { family: 'air', amount: 1, currency: 'air' },
+      { family: 'water', amount: 1, currency: 'water' },
+      { family: 'earth', amount: 1, currency: 'earth' },
+      { family: 'fire', amount: 1, currency: 'fire' },
+    ]
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
     expect(result).toContain('master-of-elements')
   })
 
-  it('not earned when one element family is missing', () => {
-    const grid = makeGrid([
-      ['air', 'blank', 'blank'],
-      ['water', 'blank', 'blank'],
-      ['earth', 'blank', 'blank'],
-      ['blank', 'blank', 'blank'],
-      ['blank', 'blank', 'blank'],
-    ])
+  it('not earned when one element family is missing from claimPayouts', () => {
+    const grid = makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']])
     const prev = magicStateWith(grid)
     const next = baseState()
-    const result = checkNewAchievements(prev, next, { type: 'CLAIM' })
+    const claimPayouts = [
+      { family: 'air', amount: 1, currency: 'air' },
+      { family: 'water', amount: 1, currency: 'water' },
+      { family: 'earth', amount: 1, currency: 'earth' },
+    ]
+    const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
     expect(result).not.toContain('master-of-elements')
   })
 })
@@ -429,14 +601,16 @@ describe('checkNewAchievements — happily-ever-after', () => {
     'why',
     'born-with-diamond-spoon',
     'this-is-sparta',
-    'ancient-civilization',
+    'blow-it-up',
+    'sweet',
+    'nice',
     'master-of-elements',
   ]
 
-  it('earned when 14th non-meta achievement is added (completing the set)', () => {
-    // prevState has 13, newState has 14 (the last one just added)
-    const thirteenIds = ALL_NON_META.slice(0, 12)
-    const allFourteen = ALL_NON_META.slice(0, 12).concat(['born-with-diamond-spoon'])
+  it('earned when last non-meta achievement is added (completing the set)', () => {
+    // prevState has all but last, newState has all 14
+    const thirteenIds = ALL_NON_META.slice(0, 13)
+    const allFourteen = ALL_NON_META.slice(0, 13).concat(['master-of-elements'])
     const prev = magicStateWith(makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']]))
     prev.unlockedAchievements = thirteenIds
     const next = baseState({ unlockedAchievements: allFourteen })

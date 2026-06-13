@@ -34,6 +34,11 @@ export function loadState(): GameState | null {
     if (state.settings?.spinMultiplier !== 1) {
       state.settings = { ...state.settings, spinMultiplier: 1 }
     }
+    if (state.rowCount == null) state.rowCount = 3
+    if (!Object.prototype.hasOwnProperty.call(state, 'initialSpinPayouts')) state.initialSpinPayouts = null
+    state.unlockedAchievements = state.unlockedAchievements
+      .filter((id) => (id as string) !== 'ancient-civilization')
+      .map((id) => (id as string) === 'wip1' ? 'sweet' : (id as string) === 'wip2' ? 'nice' : id) as typeof state.unlockedAchievements
     return state
   } catch {
     return null

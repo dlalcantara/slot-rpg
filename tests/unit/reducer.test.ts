@@ -473,7 +473,7 @@ describe('BUY_ICON action', () => {
   })
 
   it('rejects purchase when all tiers insufficient', () => {
-    const state = makeInitialState()
+    const state = stateWithCurrencies({ copper: 0, silver: 0, gold: 0 })
     const next = gameReducer(state, { type: 'BUY_ICON', iconDefinitionId: 'apple' })
     expect(next.reel.icons.length).toBe(state.reel.icons.length)
   })
@@ -788,6 +788,169 @@ describe('PRESTIGE action', () => {
     expect(next.magicCounters).toEqual({ respin: 0, swap: 0, increaseValue: 0 })
     expect(next.pendingMultiplier).toBe(1)
     expect(next.magicGrid).toBeNull()
+  })
+})
+
+// ─── T034: initialSpinPayouts lifecycle (US5) ────────────────────────────────
+
+describe('initialSpinPayouts lifecycle (T034)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('after SPIN action, state.initialSpinPayouts is set (non-null)', () => {
+    const state = stateWithCurrencies({ food: 10 })
+    const after = gameReducer(state, { type: 'SPIN', multiplier: 1 })
+    // SPIN should compute and store initialSpinPayouts from the drawn columns
+    expect(after.initialSpinPayouts).not.toBeUndefined()
+  })
+
+  it('after CLAIM, state.initialSpinPayouts is reset to null', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([{ family: 'food', amount: 1, currency: 'food' }])
+    const state = magicState({ initialSpinPayouts: [{ family: 'food', amount: 1, currency: 'food' }] })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.initialSpinPayouts).toBeNull()
+  })
+
+  it('after auto-prestige (starvation), state.initialSpinPayouts is null', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([])
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, food: 0 },
+      initialSpinPayouts: [{ family: 'food', amount: 1, currency: 'food' }],
+    })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.initialSpinPayouts).toBeNull()
+  })
+})
+
+// ─── T021: auto-prestige on food=0 (US2) ─────────────────────────────────────
+
+describe('CLAIM auto-prestige on food=0 (T021)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('CLAIM that results in food=0 sets phase to starvation (not gameover)', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([])
+    const state = magicState({ currencies: { ...makeInitialState().currencies, food: 0 } })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.phase).toBe('starvation')
+    expect(next.phase).not.toBe('gameover')
+  })
+
+  it('auto-prestige resets reel to {apple, copper, air, water}', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([])
+    const state = magicState({ currencies: { ...makeInitialState().currencies, food: 0 } })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    const defIds = next.reel.icons.map((i) => i.definitionId).sort()
+    expect(defIds).toEqual(['air', 'apple', 'copper', 'water'])
+  })
+
+  it('auto-prestige resets currencies to PRESTIGE_STARTING_CURRENCIES including copper=10', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([])
+    const state = magicState({ currencies: { ...makeInitialState().currencies, food: 0, copper: 500, silver: 50 } })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.currencies).toMatchObject(PRESTIGE_STARTING_CURRENCIES)
+  })
+
+  it('auto-prestige resets rowCount to 3', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([])
+    const state = magicState({ currencies: { ...makeInitialState().currencies, food: 0 }, rowCount: 5 })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.rowCount).toBe(3)
+  })
+
+  it('auto-prestige preserves previously unlocked achievements', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([])
+    const state = magicState({
+      currencies: { ...makeInitialState().currencies, food: 0 },
+      unlockedAchievements: ['how-do-you-like-them-apples'],
+    })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.unlockedAchievements).toContain('how-do-you-like-them-apples')
+  })
+
+  it('DISMISS_STARVATION action transitions phase to market', () => {
+    const state: GameState = { ...makeInitialState(), phase: 'starvation' }
+    const next = gameReducer(state, { type: 'DISMISS_STARVATION' })
+    expect(next.phase).toBe('market')
+  })
+})
+
+// ─── T019: prestige starting copper (US3) ────────────────────────────────────
+
+describe('PRESTIGE starting currencies include copper=10 (T019)', () => {
+  function buildReelWith3xIcons(defIds: string[]): GameState['reel'] {
+    const icons = defIds.flatMap((defId) => [
+      { id: `${defId}-1`, definitionId: defId },
+      { id: `${defId}-2`, definitionId: defId },
+      { id: `${defId}-3`, definitionId: defId },
+    ])
+    return { icons }
+  }
+
+  it('after PRESTIGE action, state.currencies.copper equals 10', () => {
+    const state: GameState = {
+      ...makeInitialState(),
+      phase: 'market',
+      reel: buildReelWith3xIcons(['apple', 'copper', 'air', 'water']),
+    }
+    const next = gameReducer(state, { type: 'PRESTIGE', keepDefinitionIds: ['apple', 'copper', 'air', 'water'] })
+    expect(next.currencies.copper).toBe(10)
+  })
+
+  it('after PRESTIGE action, food=10, air=10, water=10', () => {
+    const state: GameState = {
+      ...makeInitialState(),
+      phase: 'market',
+      reel: buildReelWith3xIcons(['apple', 'copper', 'air', 'water']),
+    }
+    const next = gameReducer(state, { type: 'PRESTIGE', keepDefinitionIds: ['apple', 'copper', 'air', 'water'] })
+    expect(next.currencies.food).toBe(10)
+    expect(next.currencies.air).toBe(10)
+    expect(next.currencies.water).toBe(10)
+  })
+})
+
+// ─── T009: rowCount updates on CLAIM ─────────────────────────────────────────
+
+describe('CLAIM rowCount updates (T009)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('CLAIM with energy payout ≥16 sets rowCount to 4', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([{ family: 'energy', amount: 16, currency: 'energy' }])
+    const state = magicState()
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.rowCount).toBe(4)
+  })
+
+  it('CLAIM with energy ≥69 sets rowCount to 5', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([{ family: 'energy', amount: 69, currency: 'energy' }])
+    const state = magicState()
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.rowCount).toBe(5)
+  })
+
+  it('CLAIM with energy 15 leaves rowCount unchanged', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([{ family: 'energy', amount: 15, currency: 'energy' }])
+    const state = magicState()
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.rowCount).toBe(3)
+  })
+
+  it('CLAIM with energy ≥16 when rowCount already 4 does not re-fire sweet dialog', async () => {
+    const { calculatePayouts } = await import('@/game/spinLogic')
+    vi.mocked(calculatePayouts).mockReturnValueOnce([{ family: 'energy', amount: 16, currency: 'energy' }])
+    const state = magicState({ rowCount: 4, unlockedAchievements: ['sweet'] })
+    const next = gameReducer(state, { type: 'CLAIM' })
+    expect(next.rowCount).toBe(4)
+    expect(next.unlockedAchievements.filter((id) => id === 'sweet')).toHaveLength(1)
   })
 })
 

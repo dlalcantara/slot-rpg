@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { gameReducer } from '@/game/reducer'
 import { makeInitialState } from '@/game/initialState'
+import { calculatePayouts } from '@/game/spinLogic'
 import type { GameState, MagicCell } from '@/game/types'
 import type { AchievementId } from '@/game/achievements'
 
@@ -50,35 +51,9 @@ describe('achievement flow integration', () => {
     expect(next.unlockedAchievements).toContain('how-do-you-like-them-apples')
   })
 
-  it('T015b: CLAIM with 2 apple-family icons in grid → second-breakfast added', () => {
-    const grid: MagicCell[][] = [
-      [
-        { icon: { id: 'c0r0', definitionId: 'apple' }, valueOverride: null },
-        { icon: { id: 'c0r1', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c0r2', definitionId: 'blank' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c1r0', definitionId: 'apple' }, valueOverride: null },
-        { icon: { id: 'c1r1', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c1r2', definitionId: 'blank' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c2r0', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c2r1', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c2r2', definitionId: 'blank' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c3r0', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c3r1', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c3r2', definitionId: 'blank' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c4r0', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c4r1', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c4r2', definitionId: 'blank' }, valueOverride: null },
-      ],
-    ]
-    const state = magicState({ magicGrid: grid })
+  it('T015b: CLAIM with apple payout ≥2 → second-breakfast added', () => {
+    vi.mocked(calculatePayouts).mockReturnValueOnce([{ family: 'apple', amount: 2, currency: 'food' }])
+    const state = magicState()
     const next = gameReducer(state, { type: 'CLAIM' })
     expect(next.unlockedAchievements).toContain('second-breakfast')
   })
@@ -100,45 +75,23 @@ describe('happily-ever-after meta-achievement', () => {
     'why',
     'born-with-diamond-spoon',
     'this-is-sparta',
-    'ancient-civilization',
+    'blow-it-up',
+    'sweet',
+    'nice',
     'master-of-elements',
   ]
 
   it('T031: adding the 14th non-meta achievement triggers happily-ever-after', () => {
-    // Use a grid with all 4 element families to unlock master-of-elements
-    const grid: MagicCell[][] = [
-      [
-        { icon: { id: 'c0r0', definitionId: 'air' }, valueOverride: null },
-        { icon: { id: 'c0r1', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c0r2', definitionId: 'blank' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c1r0', definitionId: 'water' }, valueOverride: null },
-        { icon: { id: 'c1r1', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c1r2', definitionId: 'blank' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c2r0', definitionId: 'earth' }, valueOverride: null },
-        { icon: { id: 'c2r1', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c2r2', definitionId: 'blank' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c3r0', definitionId: 'fire' }, valueOverride: null },
-        { icon: { id: 'c3r1', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c3r2', definitionId: 'blank' }, valueOverride: null },
-      ],
-      [
-        { icon: { id: 'c4r0', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c4r1', definitionId: 'blank' }, valueOverride: null },
-        { icon: { id: 'c4r2', definitionId: 'blank' }, valueOverride: null },
-      ],
-    ]
+    // Mock calculatePayouts to return all 4 element families → unlocks master-of-elements
+    vi.mocked(calculatePayouts).mockReturnValueOnce([
+      { family: 'air', amount: 1, currency: 'air' },
+      { family: 'water', amount: 1, currency: 'water' },
+      { family: 'earth', amount: 1, currency: 'earth' },
+      { family: 'fire', amount: 1, currency: 'fire' },
+    ])
     // State has all non-meta achievements except master-of-elements
     const without13th = ALL_NON_META.filter((id) => id !== 'master-of-elements')
-    const state = magicState({
-      magicGrid: grid,
-      unlockedAchievements: without13th,
-    })
+    const state = magicState({ unlockedAchievements: without13th })
     const next = gameReducer(state, { type: 'CLAIM' })
     expect(next.unlockedAchievements).toContain('master-of-elements')
     expect(next.unlockedAchievements).toContain('happily-ever-after')

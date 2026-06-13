@@ -12,9 +12,9 @@ export type AchievementId =
   | 'why'
   | 'born-with-diamond-spoon'
   | 'this-is-sparta'
-  | 'ancient-civilization'
-  | 'wip1'
-  | 'wip2'
+  | 'blow-it-up'
+  | 'sweet'
+  | 'nice'
   | 'master-of-elements'
   | 'happily-ever-after'
 
@@ -53,7 +53,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: 'i-understand-it-now',
     title: 'I Understand It Now',
-    description: 'Prestige while keeping a silver or gold icon.',
+    description: 'Prestige keeping an icon that costs at least 1 silver',
     isWip: false,
   },
   {
@@ -87,22 +87,22 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     isWip: false,
   },
   {
-    id: 'ancient-civilization',
-    title: 'Ancient Civilization',
-    description: 'Accumulate 5000 crowns.',
+    id: 'blow-it-up',
+    title: 'Blow it up',
+    description: 'Use the respin action and earn even more as a result.',
     isWip: false,
   },
   {
-    id: 'wip1',
-    title: 'Coming Soon',
-    description: 'This achievement is not yet available.',
-    isWip: true,
+    id: 'sweet',
+    title: 'Sweet',
+    description: 'Earn ≥16 energy in a single spin.',
+    isWip: false,
   },
   {
-    id: 'wip2',
-    title: 'Coming Soon',
-    description: 'This achievement is not yet available.',
-    isWip: true,
+    id: 'nice',
+    title: 'Nice',
+    description: 'Earn ≥69 energy in a single spin.',
+    isWip: false,
   },
   {
     id: 'master-of-elements',
@@ -131,6 +131,7 @@ export function checkNewAchievements(
   prevState: GameState,
   newState: GameState,
   action: GameAction,
+  claimPayouts?: import('./types').Payout[],
 ): AchievementId[] {
   const already = new Set(newState.unlockedAchievements)
   const earned: AchievementId[] = []
@@ -165,9 +166,9 @@ export function checkNewAchievements(
     const allCols = iconColumns(prevState)
     const activeCols = allCols.filter((_, i) => !prevState.blockedColumns.includes(i))
 
-    // second-breakfast: ≥2 apple-family icons in active spin result
-    const appleCount = activeCols.flat().filter((i) => ICON_CATALOG[i.definitionId]?.family === 'apple').length
-    if (appleCount >= 2) tryEarn('second-breakfast')
+    // second-breakfast: apple-family payout amount ≥2
+    const applePayout = (claimPayouts ?? []).find((p) => p.family === 'apple')?.amount ?? 0
+    if (applePayout >= 2) tryEarn('second-breakfast')
 
     // be-water-my-friend: used swap + rawPayouts from ≥2 distinct families
     if (prevState.magicCounters.swap > 0) {
@@ -182,13 +183,26 @@ export function checkNewAchievements(
       if (allTotal > activeTotal) tryEarn('why')
     }
 
-    // this-is-sparta / ancient-civilization
-    if ((newState.currencies.crowns ?? 0) >= 300) tryEarn('this-is-sparta')
-    if ((newState.currencies.crowns ?? 0) >= 5000) tryEarn('ancient-civilization')
+    // blow-it-up: magic was used, initial spin was non-zero, claim total > initial total
+    if (prevState.phase === 'magic') {
+      const sumPayouts = (payouts: import('./types').Payout[] | null) =>
+        (payouts ?? []).reduce((sum, p) => sum + p.amount, 0)
+      const initialTotal = sumPayouts(prevState.initialSpinPayouts)
+      const claimTotal = sumPayouts(claimPayouts ?? null)
+      if (initialTotal > 0 && claimTotal > initialTotal) tryEarn('blow-it-up')
+    }
 
-    // master-of-elements: all 4 element families appear ≥1 time
-    const spinFamilies = new Set(activeCols.flat().map((i) => ICON_CATALOG[i.definitionId]?.family))
-    if (['air', 'water', 'earth', 'fire'].every((f) => spinFamilies.has(f))) tryEarn('master-of-elements')
+    // sweet / nice: energy earned in this spin
+    const energyAmount = (claimPayouts ?? []).find((p) => p.currency === 'energy')?.amount ?? 0
+    if (energyAmount >= 16) tryEarn('sweet')
+    if (energyAmount >= 69) tryEarn('nice')
+
+    // this-is-sparta
+    if ((newState.currencies.crowns ?? 0) >= 300) tryEarn('this-is-sparta')
+
+    // master-of-elements: all 4 element families appear in claimPayouts
+    const payoutFamilies = new Set((claimPayouts ?? []).map((p) => p.family))
+    if (['air', 'water', 'earth', 'fire'].every((f) => payoutFamilies.has(f))) tryEarn('master-of-elements')
   }
 
   if (action.type === 'PRESTIGE') {
