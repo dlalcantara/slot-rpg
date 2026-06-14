@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { MagicCell } from '@/game/types'
+import { ICON_CATALOG } from '@/game/catalog'
 
 // Re-export for testing — computeHighlights is not exported from SlotGrid,
 // so we replicate the same logic here to test the pure function contract.
@@ -8,20 +9,27 @@ function computeHighlights(
   blockedCols: number[],
 ): Map<string, 'green' | 'yellow'> {
   const activeCount = grid.length - blockedCols.length
-  const defColSets = new Map<string, Set<number>>()
+  const familyColSets = new Map<string, Set<number>>()
   grid.forEach((col, colIdx) => {
     if (blockedCols.includes(colIdx)) return
     col.forEach((cell) => {
-      const defId = cell.icon.definitionId
-      if (defId === 'blank') return
-      if (!defColSets.has(defId)) defColSets.set(defId, new Set())
-      defColSets.get(defId)!.add(colIdx)
+      const family = ICON_CATALOG[cell.icon.definitionId]?.family ?? 'blank'
+      if (family === 'blank') return
+      if (!familyColSets.has(family)) familyColSets.set(family, new Set())
+      familyColSets.get(family)!.add(colIdx)
     })
   })
   const map = new Map<string, 'green' | 'yellow'>()
-  defColSets.forEach((colSet, defId) => {
-    if (colSet.size === activeCount) map.set(defId, 'green')
-    else if (colSet.size === activeCount - 1) map.set(defId, 'yellow')
+  grid.forEach((col) => {
+    col.forEach((cell) => {
+      const defId = cell.icon.definitionId
+      const family = ICON_CATALOG[defId]?.family ?? 'blank'
+      if (family === 'blank') return
+      const colSet = familyColSets.get(family)
+      if (!colSet) return
+      if (colSet.size === activeCount) map.set(defId, 'green')
+      else if (colSet.size === activeCount - 1) map.set(defId, 'yellow')
+    })
   })
   return map
 }
@@ -90,5 +98,28 @@ describe('computeHighlights', () => {
     const result = computeHighlights(grid, [])
     expect(result.get('apple')).toBe('green')
     expect(result.get('copper')).toBe('yellow')
+  })
+
+  it('[US1] apple-family cross-variant: apple/triple-apple/dozen-apple in 3 cols → all green', () => {
+    const grid = makeGrid([['apple'], ['triple-apple'], ['dozen-apple']])
+    const result = computeHighlights(grid, [])
+    expect(result.get('apple')).toBe('green')
+    expect(result.get('triple-apple')).toBe('green')
+    expect(result.get('dozen-apple')).toBe('green')
+  })
+
+  it('[US1] apple-family cross-variant: apple+triple-apple in 2 of 3 cols → both yellow', () => {
+    const grid = makeGrid([['apple'], ['triple-apple'], ['blank']])
+    const result = computeHighlights(grid, [])
+    expect(result.get('apple')).toBe('yellow')
+    expect(result.get('triple-apple')).toBe('yellow')
+  })
+
+  it('[US1] apple-family cross-variant: only apple in col 0 of 3 → no highlight for any variant', () => {
+    const grid = makeGrid([['apple'], ['blank'], ['blank']])
+    const result = computeHighlights(grid, [])
+    expect(result.get('apple')).toBeUndefined()
+    expect(result.get('triple-apple')).toBeUndefined()
+    expect(result.get('dozen-apple')).toBeUndefined()
   })
 })

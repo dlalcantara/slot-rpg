@@ -199,6 +199,7 @@ export default function App() {
           <ReelView
             reel={state.reel}
             onPrestige={(keepDefinitionIds) => dispatch({ type: 'PRESTIGE', keepDefinitionIds })}
+            isMagicPhase={isMagicPhase}
           />
         </div>
 
@@ -266,7 +267,7 @@ export default function App() {
         </div>
 
         <div className={activeTab === 'market' ? '' : 'hidden'}>
-          <Market currencies={state.currencies} reel={state.reel} onBuy={handleBuy} />
+          <Market currencies={state.currencies} reel={state.reel} onBuy={handleBuy} isMagicPhase={isMagicPhase} />
         </div>
 
         <div className={activeTab === 'achievements' ? '' : 'hidden'}>

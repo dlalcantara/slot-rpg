@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { useReducer } from 'react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import App from '@/App'
-import type { GameState } from '@/game/types'
+import type { GameState, GameAction } from '@/game/types'
 import { makeInitialState } from '@/game/initialState'
+import { gameReducer } from '@/game/reducer'
+import { Market } from '@/components/Market'
 
 const mockLoadState = vi.fn(() => null as GameState | null)
 
@@ -85,6 +88,51 @@ describe('market flow integration', () => {
     const buyButtons = screen.getAllByRole('button', { name: /buy/i })
     // All buy buttons should be disabled since player has 0 of all currencies
     expect(buyButtons[0]).toBeDisabled()
+  })
+
+  it('[US4] spin unclaimed gates market: Buy blocked during magic phase, unblocked after Claim', () => {
+    // Use reducer directly to control state without animation
+    function TestHarness() {
+      const [state, dispatch] = useReducer(gameReducer, {
+        ...makeInitialState(),
+        currencies: { food: 10, copper: 100, silver: 0, gold: 0, crowns: 0, air: 0, water: 0, earth: 0, fire: 0, energy: 0 },
+      } as GameState)
+      return (
+        <>
+          <button onClick={() => dispatch({ type: 'SPIN', multiplier: 1 } as GameAction)}>Trigger Spin</button>
+          <button onClick={() => dispatch({ type: 'BEGIN_MAGIC_PHASE' } as GameAction)}>Begin Magic</button>
+          <button onClick={() => dispatch({ type: 'CLAIM' } as GameAction)}>Trigger Claim</button>
+          <Market
+            currencies={state.currencies}
+            reel={state.reel}
+            onBuy={() => {}}
+            isMagicPhase={state.phase === 'magic'}
+          />
+        </>
+      )
+    }
+    render(<TestHarness />)
+
+    // Initially not in magic phase → buy enabled (assuming affordable)
+    const buyBtnsInitial = screen.getAllByRole('button', { name: /buy apple/i })
+    expect(buyBtnsInitial[0]).not.toBeDisabled()
+    expect(screen.queryByText(/claim your spin/i)).not.toBeInTheDocument()
+
+    // Enter magic phase
+    act(() => { fireEvent.click(screen.getByText('Trigger Spin')) })
+    act(() => { fireEvent.click(screen.getByText('Begin Magic')) })
+
+    // In magic phase: buy blocked, claim banner present
+    expect(screen.getByText(/claim your spin before purchasing/i)).toBeInTheDocument()
+    const buyBtnsBlocked = screen.getAllByRole('button', { name: /buy apple/i })
+    expect(buyBtnsBlocked[0]).toBeDisabled()
+
+    // Claim the spin
+    act(() => { fireEvent.click(screen.getByText('Trigger Claim')) })
+
+    // After claim: buy re-enabled
+    const buyBtnsAfter = screen.getAllByRole('button', { name: /buy apple/i })
+    expect(buyBtnsAfter[0]).not.toBeDisabled()
   })
 
   it('successful purchase deducts copper and increases balance display', () => {

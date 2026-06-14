@@ -203,6 +203,39 @@ describe('ReelColumn respin animation height (US4 v0.6)', () => {
   })
 })
 
+// ─── US2 v1.1: multiplier badge display ─────────────────────────────────────
+
+describe('ReelColumn multiplier badge (US2 v1.1)', () => {
+  it('triple-apple: 2x🍎 emoji must not appear; ×2 badge must appear', () => {
+    const icons: Icon[] = [{ id: 'ta1', definitionId: 'triple-apple' }]
+    renderColumn({ icons })
+    expect(screen.queryByText('2x🍎')).not.toBeInTheDocument()
+    expect(screen.queryAllByText('×2')).toHaveLength(1)
+  })
+
+  it('dozen-apple: 3x🍎 emoji must not appear; ×3 badge must appear', () => {
+    const icons: Icon[] = [{ id: 'da1', definitionId: 'dozen-apple' }]
+    renderColumn({ icons })
+    expect(screen.queryByText('3x🍎')).not.toBeInTheDocument()
+    expect(screen.queryAllByText('×3')).toHaveLength(1)
+  })
+
+  it('triple-apple with Magic Boost override: only one ×N label (green override), not two', () => {
+    const icons: Icon[] = [{ id: 'ta1', definitionId: 'triple-apple' }]
+    const overrides = new Map<string, number>([['ta1', 5]])
+    renderColumn({ icons, valueOverrides: overrides })
+    const badges = screen.queryAllByText(/^×\d+$/)
+    expect(badges).toHaveLength(1)
+    expect(badges[0]).toHaveClass('text-green-400')
+  })
+
+  it('plain apple: no multiplier badge rendered', () => {
+    const icons: Icon[] = [{ id: 'a1', definitionId: 'apple' }]
+    renderColumn({ icons })
+    expect(screen.queryByText(/^×\d+$/)).not.toBeInTheDocument()
+  })
+})
+
 // ─── Blocked column indicator ───────────────────────────────────────────────
 
 describe('ReelColumn blocked indicator', () => {

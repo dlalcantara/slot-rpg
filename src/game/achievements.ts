@@ -47,7 +47,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: 'sss',
     title: 'SSS',
-    description: 'Own at least 3 silver-family icons.',
+    description: 'Have at least 3 silver icons in your reel.',
     isWip: false,
   },
   {

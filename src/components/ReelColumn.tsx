@@ -152,7 +152,7 @@ export function ReelColumn({
         return (
           <div
             key={i}
-            className={`icon-cell ${borderClass} ${animating && !blocked ? 'bg-blue-900 ring-2 ring-blue-400 brightness-125' : ''} ${
+            className={`icon-cell relative ${borderClass} ${animating && !blocked ? 'bg-blue-900 ring-2 ring-blue-400 brightness-125' : ''} ${
               isMagicPhase ? 'cursor-pointer hover:ring-2 hover:ring-purple-400' : ''
             } ${blocked ? 'opacity-40' : ''}`}
             role="listitem"
@@ -162,9 +162,11 @@ export function ReelColumn({
             }}
           >
             <span>{def?.emoji ?? '?'}</span>
-            {hasOverride && (
-              <span className="text-xs text-green-400 ml-1">(×{effectiveValue})</span>
-            )}
+            {hasOverride ? (
+              <span className="absolute bottom-0.5 right-0.5 text-xs text-green-400 leading-none">×{effectiveValue}</span>
+            ) : def && def.valuePerColumn > 1 ? (
+              <span className="absolute bottom-0.5 right-0.5 text-xs text-gray-400 leading-none">×{def.valuePerColumn}</span>
+            ) : null}
           </div>
         )
       })}

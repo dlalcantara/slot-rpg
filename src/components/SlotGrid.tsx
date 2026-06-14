@@ -1,4 +1,5 @@
 import type { SpinResult, Icon, Reel, MagicCell, GameAction, MagicMode } from '../game/types'
+import { ICON_CATALOG } from '../game/catalog'
 import { ReelColumn } from './ReelColumn'
 
 const PLACEHOLDER_ICON: Icon = { id: 'ph', definitionId: 'blank' }
@@ -26,20 +27,27 @@ function computeHighlights(
   blockedCols: number[],
 ): Map<string, 'green' | 'yellow'> {
   const activeCount = grid.length - blockedCols.length
-  const defColSets = new Map<string, Set<number>>()
+  const familyColSets = new Map<string, Set<number>>()
   grid.forEach((col, colIdx) => {
     if (blockedCols.includes(colIdx)) return
     col.forEach((cell) => {
-      const defId = cell.icon.definitionId
-      if (defId === 'blank') return
-      if (!defColSets.has(defId)) defColSets.set(defId, new Set())
-      defColSets.get(defId)!.add(colIdx)
+      const family = ICON_CATALOG[cell.icon.definitionId]?.family ?? 'blank'
+      if (family === 'blank') return
+      if (!familyColSets.has(family)) familyColSets.set(family, new Set())
+      familyColSets.get(family)!.add(colIdx)
     })
   })
   const map = new Map<string, 'green' | 'yellow'>()
-  defColSets.forEach((colSet, defId) => {
-    if (colSet.size === activeCount) map.set(defId, 'green')
-    else if (colSet.size === activeCount - 1) map.set(defId, 'yellow')
+  grid.forEach((col) => {
+    col.forEach((cell) => {
+      const defId = cell.icon.definitionId
+      const family = ICON_CATALOG[defId]?.family ?? 'blank'
+      if (family === 'blank') return
+      const colSet = familyColSets.get(family)
+      if (!colSet) return
+      if (colSet.size === activeCount) map.set(defId, 'green')
+      else if (colSet.size === activeCount - 1) map.set(defId, 'yellow')
+    })
   })
   return map
 }

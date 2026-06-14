@@ -15,8 +15,8 @@
 
 **Purpose**: Verify baseline before touching any files.
 
-- [ ] T001 Run `npm test` and confirm all existing tests pass (baseline green)
-- [ ] T002 Run `npx tsc --noEmit` and confirm zero type errors (baseline clean)
+- [X] T001 Run `npm test` and confirm all existing tests pass (baseline green)
+- [X] T002 Run `npx tsc --noEmit` and confirm zero type errors (baseline clean)
 
 ---
 
@@ -36,11 +36,11 @@ No shared infrastructure changes required. All 5 bugs are independent; proceed d
 
 > **Write these tests FIRST and confirm they FAIL before implementation (Red)**
 
-- [ ] T003 [US1] Add cross-variant apple family test cases to `tests/unit/computeHighlights.test.ts`: (a) apple/triple-apple/dozen-apple in 3 separate columns of a 3-col grid → all three definitionIds map to `'green'`; (b) apple in col 0, triple-apple in col 1, blank in col 2 (3 active) → both map to `'yellow'`; (c) only apple in col 0 of 3 → no highlight for any apple variant. Also update the duplicated function body inside the test file to use the family-based algorithm so tests target the right contract.
+- [X] T003 [US1] Add cross-variant apple family test cases to `tests/unit/computeHighlights.test.ts`: (a) apple/triple-apple/dozen-apple in 3 separate columns of a 3-col grid → all three definitionIds map to `'green'`; (b) apple in col 0, triple-apple in col 1, blank in col 2 (3 active) → both map to `'yellow'`; (c) only apple in col 0 of 3 → no highlight for any apple variant. Also update the duplicated function body inside the test file to use the family-based algorithm so tests target the right contract.
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Fix `computeHighlights` in `src/components/SlotGrid.tsx`: (1) add `import { ICON_CATALOG } from '../game/catalog'` at top; (2) replace the `defColSets: Map<string, Set<number>>` loop with a `familyColSets: Map<string, Set<number>>` loop that keys on `ICON_CATALOG[cell.icon.definitionId]?.family ?? 'blank'` and skips `'blank'`; (3) replace the output-map loop with a second pass over grid cells that reads each cell's family colSet and emits `definitionId → color`. See plan.md Bug 1 section for the exact algorithm.
+- [X] T004 [US1] Fix `computeHighlights` in `src/components/SlotGrid.tsx`: (1) add `import { ICON_CATALOG } from '../game/catalog'` at top; (2) replace the `defColSets: Map<string, Set<number>>` loop with a `familyColSets: Map<string, Set<number>>` loop that keys on `ICON_CATALOG[cell.icon.definitionId]?.family ?? 'blank'` and skips `'blank'`; (3) replace the output-map loop with a second pass over grid cells that reads each cell's family colSet and emits `definitionId → color`. See plan.md Bug 1 section for the exact algorithm.
 
 **Checkpoint**: `npm test -- computeHighlights` passes all cases including the new cross-variant tests.
 
@@ -56,12 +56,12 @@ No shared infrastructure changes required. All 5 bugs are independent; proceed d
 
 > **Write these tests FIRST and confirm they FAIL before implementation (Red)**
 
-- [ ] T005 [US2] Add failing test cases to `tests/unit/ReelColumn.test.tsx`: (a) a column of `triple-apple` icons renders `🍎` and `×2` text, and `2x🍎` must NOT appear; (b) a column of `dozen-apple` icons renders `🍎` and `×3` text; (c) when `valueOverrides` has a boosted value for a `triple-apple` icon, the cell renders only one `×N` label (green, the override), not two; (d) a column of plain `apple` icons renders no `×` multiplier label at all.
+- [X] T005 [US2] Add failing test cases to `tests/unit/ReelColumn.test.tsx`: (a) a column of `triple-apple` icons renders `🍎` and `×2` text, and `2x🍎` must NOT appear; (b) a column of `dozen-apple` icons renders `🍎` and `×3` text; (c) when `valueOverrides` has a boosted value for a `triple-apple` icon, the cell renders only one `×N` label (green, the override), not two; (d) a column of plain `apple` icons renders no `×` multiplier label at all.
 
 ### Implementation for User Story 2
 
-- [ ] T006 [P] [US2] Change emoji field in `src/game/catalog.ts`: `triple-apple.emoji` from `'2x🍎'` → `'🍎'`; `dozen-apple.emoji` from `'3x🍎'` → `'🍎'`. No other catalog fields change.
-- [ ] T007 [US2] Update multiplier badge render in `src/components/ReelColumn.tsx` (the per-cell JSX, currently lines ~162–168): replace the current single `{hasOverride && <span ...>(×{effectiveValue})</span>}` with a conditional that shows `×{effectiveValue}` (green, `text-green-400`) when `hasOverride`, or `×{def.valuePerColumn}` (muted, `text-gray-300`) when `!hasOverride && def.valuePerColumn > 1`, or nothing otherwise.
+- [X] T006 [P] [US2] Change emoji field in `src/game/catalog.ts`: `triple-apple.emoji` from `'2x🍎'` → `'🍎'`; `dozen-apple.emoji` from `'3x🍎'` → `'🍎'`. No other catalog fields change.
+- [X] T007 [US2] Update multiplier badge render in `src/components/ReelColumn.tsx` (the per-cell JSX, currently lines ~162–168): replace the current single `{hasOverride && <span ...>(×{effectiveValue})</span>}` with a conditional that shows `×{effectiveValue}` (green, `text-green-400`) when `hasOverride`, or `×{def.valuePerColumn}` (muted, `text-gray-300`) when `!hasOverride && def.valuePerColumn > 1`, or nothing otherwise.
 
 **Checkpoint**: `npm test -- ReelColumn` passes including new multiplier badge cases.
 
@@ -77,12 +77,12 @@ No shared infrastructure changes required. All 5 bugs are independent; proceed d
 
 > **Write these tests FIRST and confirm they FAIL before implementation (Red)**
 
-- [ ] T008 [US3] Add failing test cases to `tests/unit/market.test.tsx` (use fake timers): (a) after clicking the Buy button on an affordable item, a `✓` or `ring-green-400` class appears on that item row; (b) after `vi.advanceTimersByTime(1600)`, the indicator is gone; (c) other item rows do not show the indicator.
+- [X] T008 [US3] Add failing test cases to `tests/unit/market.test.tsx` (use fake timers): (a) after clicking the Buy button on an affordable item, a `✓` or `ring-green-400` class appears on that item row; (b) after `vi.advanceTimersByTime(1600)`, the indicator is gone; (c) other item rows do not show the indicator.
 
 ### Implementation for User Story 3
 
-- [ ] T009 [US3] Add `justBought: boolean` prop to `src/components/MarketItem.tsx`; when true, apply `ring-2 ring-green-400` to the item container div and render a `<span>✓</span>` adjacent to the Buy button (or change button text to `✓`).
-- [ ] T010 [US3] Add purchase-flash state to `src/components/Market.tsx`: `const [recentlyBought, setRecentlyBought] = useState<Set<string>>(new Set())`; wrap `onBuy` with a local handler that calls `onBuy`, adds the `definitionId` to a new Set copy, sets it, and schedules a `setTimeout` (1500 ms) to remove it. Clean up timeout refs on unmount. Pass `justBought={recentlyBought.has(def.definitionId)}` to each `<MarketItem>`.
+- [X] T009 [US3] Add `justBought: boolean` prop to `src/components/MarketItem.tsx`; when true, apply `ring-2 ring-green-400` to the item container div and render a `<span>✓</span>` adjacent to the Buy button (or change button text to `✓`).
+- [X] T010 [US3] Add purchase-flash state to `src/components/Market.tsx`: `const [recentlyBought, setRecentlyBought] = useState<Set<string>>(new Set())`; wrap `onBuy` with a local handler that calls `onBuy`, adds the `definitionId` to a new Set copy, sets it, and schedules a `setTimeout` (1500 ms) to remove it. Clean up timeout refs on unmount. Pass `justBought={recentlyBought.has(def.definitionId)}` to each `<MarketItem>`.
 
 **Checkpoint**: `npm test -- market` passes including purchase-flash cases.
 
@@ -98,16 +98,16 @@ No shared infrastructure changes required. All 5 bugs are independent; proceed d
 
 > **Write these tests FIRST and confirm they FAIL before implementation (Red)**
 
-- [ ] T011 [P] [US4] Add failing unit tests to `tests/unit/market.test.tsx`: (a) when `isMagicPhase=true`, Buy buttons are all disabled; (b) a banner with text containing "Claim" is rendered; (c) when `isMagicPhase=false`, Buy buttons follow normal affordable/cap logic and no "Claim" banner is present.
-- [ ] T012 [P] [US4] Add failing unit tests for `ReelView` (new describe block in `tests/unit/market.test.tsx` or a new `tests/unit/ReelView.test.tsx`): (a) when `isMagicPhase=true`, the Prestige button is disabled; (b) a "Claim" banner is rendered; (c) when `isMagicPhase=false`, prestige availability follows normal logic.
-- [ ] T013 [P] [US4] Add failing integration test in `tests/integration/marketFlow.test.tsx`: dispatch `SPIN` then `BEGIN_MAGIC_PHASE` → navigate to the Market tab view → assert buy is blocked with message → dispatch `CLAIM` → assert buy is unblocked.
+- [X] T011 [P] [US4] Add failing unit tests to `tests/unit/market.test.tsx`: (a) when `isMagicPhase=true`, Buy buttons are all disabled; (b) a banner with text containing "Claim" is rendered; (c) when `isMagicPhase=false`, Buy buttons follow normal affordable/cap logic and no "Claim" banner is present.
+- [X] T012 [P] [US4] Add failing unit tests for `ReelView` (new describe block in `tests/unit/market.test.tsx` or a new `tests/unit/ReelView.test.tsx`): (a) when `isMagicPhase=true`, the Prestige button is disabled; (b) a "Claim" banner is rendered; (c) when `isMagicPhase=false`, prestige availability follows normal logic.
+- [X] T013 [P] [US4] Add failing integration test in `tests/integration/marketFlow.test.tsx`: dispatch `SPIN` then `BEGIN_MAGIC_PHASE` → navigate to the Market tab view → assert buy is blocked with message → dispatch `CLAIM` → assert buy is unblocked.
 
 ### Implementation for User Story 4
 
-- [ ] T014 [US4] Add `isMagicPhase: boolean` to the `Props` interface of `src/components/Market.tsx`. At the top of the returned JSX, when `isMagicPhase`, render a yellow banner (`text-yellow-400 bg-yellow-900/30 rounded p-2 text-sm mb-2`) with text `"Claim your spin before purchasing."`. Pass `disabled={isMagicPhase}` down to `<MarketItem>` (in addition to existing `affordable`/`atCap`).
-- [ ] T015 [US4] Add `disabled: boolean` to the `Props` interface of `src/components/MarketItem.tsx` and include it in the Buy `<button>` disabled condition: `disabled={!affordable || atCap || disabled}`.
-- [ ] T016 [US4] Add `isMagicPhase: boolean` to the `Props` interface of `src/components/ReelView.tsx`. When `isMagicPhase`, render the same yellow banner (`"Claim your spin before prestiging."`) above the reel contents, and set `disabled={isMagicPhase || !prestigeAvailable}` on the Prestige start button. Also disable the prestige-selection Confirm button when `isMagicPhase`.
-- [ ] T017 [US4] In `src/App.tsx`, pass `isMagicPhase={isMagicPhase}` to both `<Market>` (line ~269) and `<ReelView>` (line ~199).
+- [X] T014 [US4] Add `isMagicPhase: boolean` to the `Props` interface of `src/components/Market.tsx`. At the top of the returned JSX, when `isMagicPhase`, render a yellow banner (`text-yellow-400 bg-yellow-900/30 rounded p-2 text-sm mb-2`) with text `"Claim your spin before purchasing."`. Pass `disabled={isMagicPhase}` down to `<MarketItem>` (in addition to existing `affordable`/`atCap`).
+- [X] T015 [US4] Add `disabled: boolean` to the `Props` interface of `src/components/MarketItem.tsx` and include it in the Buy `<button>` disabled condition: `disabled={!affordable || atCap || disabled}`.
+- [X] T016 [US4] Add `isMagicPhase: boolean` to the `Props` interface of `src/components/ReelView.tsx`. When `isMagicPhase`, render the same yellow banner (`"Claim your spin before prestiging."`) above the reel contents, and set `disabled={isMagicPhase || !prestigeAvailable}` on the Prestige start button. Also disable the prestige-selection Confirm button when `isMagicPhase`.
+- [X] T017 [US4] In `src/App.tsx`, pass `isMagicPhase={isMagicPhase}` to both `<Market>` (line ~269) and `<ReelView>` (line ~199).
 
 **Checkpoint**: `npm test -- market` and `npm test -- marketFlow` pass including gating cases.
 
@@ -123,11 +123,11 @@ No shared infrastructure changes required. All 5 bugs are independent; proceed d
 
 > **Write this test FIRST and confirm it FAILS before implementation (Red)**
 
-- [ ] T018 [US5] Add failing description test to `tests/unit/achievements.test.ts` (following the pattern of existing description tests at line ~632): `ACHIEVEMENTS.find(a => a.id === 'sss')?.description` equals `'Have at least 3 silver icons in your reel.'`
+- [X] T018 [US5] Add failing description test to `tests/unit/achievements.test.ts` (following the pattern of existing description tests at line ~632): `ACHIEVEMENTS.find(a => a.id === 'sss')?.description` equals `'Have at least 3 silver icons in your reel.'`
 
 ### Implementation for User Story 5
 
-- [ ] T019 [US5] In `src/game/achievements.ts` line ~50, change `description: 'Own at least 3 silver-family icons.'` → `'Have at least 3 silver icons in your reel.'`
+- [X] T019 [US5] In `src/game/achievements.ts` line ~50, change `description: 'Own at least 3 silver-family icons.'` → `'Have at least 3 silver icons in your reel.'`
 
 **Checkpoint**: `npm test -- achievements` passes including new SSS description test.
 
@@ -135,13 +135,13 @@ No shared infrastructure changes required. All 5 bugs are independent; proceed d
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T020 [P] Smoke-test at 720 × 1280 px: verify `×2` / `×3` badges fit inside icon cells without overflow on mobile viewport
-- [ ] T021 **[GATE 1] Typecheck** — `npx tsc --noEmit` exits 0 (blocks next gates)
-- [ ] T022 **[GATE 2] Lint** — `npm run lint` exits 0 with zero errors
-- [ ] T023 **[GATE 3] Unit Tests** — `npm test -- --run` all unit tests pass
-- [ ] T024 **[GATE 4] Integration Tests** — all integration tests pass
-- [ ] T025 **[GATE 5] Build** — `npm run build` compiles cleanly
-- [ ] T026 **[GATE 6] Bundle Size** — gzipped JS bundle ≤ 250 KB; report delta in PR description
+- [X] T020 [P] Smoke-test at 720 × 1280 px: verify `×2` / `×3` badges fit inside icon cells without overflow on mobile viewport
+- [X] T021 **[GATE 1] Typecheck** — `npx tsc --noEmit` exits 0 (blocks next gates)
+- [X] T022 **[GATE 2] Lint** — `npm run lint` exits 0 with zero errors
+- [X] T023 **[GATE 3] Unit Tests** — `npm test -- --run` all unit tests pass
+- [X] T024 **[GATE 4] Integration Tests** — all integration tests pass
+- [X] T025 **[GATE 5] Build** — `npm run build` compiles cleanly
+- [X] T026 **[GATE 6] Bundle Size** — gzipped JS bundle ≤ 250 KB; report delta in PR description
 
 ---
 

@@ -6,6 +6,8 @@ interface Props {
   currencies: Currencies
   canBuyMore: boolean
   onBuy: (definitionId: string) => void
+  justBought?: boolean
+  disabled?: boolean
 }
 
 function canAfford(currencies: Currencies, currency: string, amount: number): boolean {
@@ -31,7 +33,7 @@ function getAltPrice(costCurrency: string, amount: number): string | null {
   return null
 }
 
-export function MarketItem({ def, currencies, canBuyMore, onBuy }: Props) {
+export function MarketItem({ def, currencies, canBuyMore, onBuy, justBought = false, disabled = false }: Props) {
   const isMultiCost = def.cost === null && def.multiCost !== null
 
   if (def.cost === null && !isMultiCost) return null
@@ -42,9 +44,14 @@ export function MarketItem({ def, currencies, canBuyMore, onBuy }: Props) {
   const atCap = !canBuyMore
 
   return (
-    <div className="flex items-center justify-between p-2 bg-gray-700 rounded-lg">
+    <div className={`flex items-center justify-between p-2 bg-gray-700 rounded-lg ${justBought ? 'ring-2 ring-green-400' : ''}`}>
       <div className="flex items-center gap-2">
-        <span className="icon-cell">{def.emoji}</span>
+        <span className="icon-cell relative">
+          {def.emoji}
+          {def.valuePerColumn > 1 && (
+            <span className="absolute bottom-0.5 right-0.5 text-xs text-gray-400 leading-none">×{def.valuePerColumn}</span>
+          )}
+        </span>
         <div>
           <p className="text-sm font-medium">{def.label}</p>
           {isMultiCost ? (
@@ -68,11 +75,11 @@ export function MarketItem({ def, currencies, canBuyMore, onBuy }: Props) {
       </div>
       <button
         onClick={() => onBuy(def.definitionId)}
-        disabled={!affordable || atCap}
+        disabled={!affordable || atCap || disabled}
         className="px-3 py-1 text-sm font-bold rounded-lg bg-green-700 hover:bg-green-600 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         aria-label={`Buy ${def.label}`}
       >
-        Buy
+        {justBought ? '✓' : 'Buy'}
       </button>
     </div>
   )

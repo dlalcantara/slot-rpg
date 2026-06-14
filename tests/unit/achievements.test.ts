@@ -650,4 +650,9 @@ describe('ACHIEVEMENTS — US3 description fixes', () => {
     const waterIdx = ACHIEVEMENTS.findIndex((a) => a.id === 'be-water-my-friend')
     expect(blowIdx).toBeLessThan(waterIdx)
   })
+
+  it('[US5] sss description equals "Have at least 3 silver icons in your reel."', () => {
+    const a = ACHIEVEMENTS.find((a) => a.id === 'sss')
+    expect(a?.description).toBe('Have at least 3 silver icons in your reel.')
+  })
 })
