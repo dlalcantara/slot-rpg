@@ -46,7 +46,7 @@ export const ICON_CATALOG: Record<string, IconDefinition> = {
     family: 'copper',
     valuePerColumn: 1,
     label: 'Copper',
-    emoji: '🟠',
+    emoji: '🟤',
     effect: { type: 'add_currency', currency: 'copper', valuePerColumn: 1 },
     cost: { currency: 'copper', amount: 1 },
     multiCost: null,

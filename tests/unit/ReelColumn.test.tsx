@@ -68,7 +68,7 @@ describe('ReelColumn icon sync (US2)', () => {
     )
 
     expect(screen.queryAllByText('🍎')).toHaveLength(0)
-    expect(screen.getAllByText('🟠')).toHaveLength(3)
+    expect(screen.getAllByText('🟤')).toHaveLength(3)
   })
 
   it('does not sync icons when animation is in flight', () => {
@@ -91,7 +91,7 @@ describe('ReelColumn icon sync (US2)', () => {
       />
     )
     act(() => { vi.advanceTimersByTime(5000) })
-    expect(screen.getAllByText('🟠')).toHaveLength(3)
+    expect(screen.getAllByText('🟤')).toHaveLength(3)
   })
 })
 
@@ -127,7 +127,7 @@ describe('ReelColumn respin animation (US3)', () => {
     )
 
     act(() => { vi.advanceTimersByTime(2000) })
-    expect(screen.getAllByText('🟠')).toHaveLength(3)
+    expect(screen.getAllByText('🟤')).toHaveLength(3)
   })
 
   it('animate off: respinToken change updates immediately with no animation', () => {
@@ -154,7 +154,7 @@ describe('ReelColumn respin animation (US3)', () => {
     )
 
     expect(screen.queryAllByText('🍎')).toHaveLength(0)
-    expect(screen.getAllByText('🟠')).toHaveLength(3)
+    expect(screen.getAllByText('🟤')).toHaveLength(3)
   })
 })
 

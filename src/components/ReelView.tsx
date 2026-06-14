@@ -62,7 +62,7 @@ export function ReelView({ reel, onPrestige }: Props) {
                 aria-pressed={isSelected}
                 className={`icon-cell cursor-pointer ${isSelected ? 'ring-2 ring-indigo-400 bg-indigo-900' : ''}`}
               >
-                {def?.label ?? defId}
+                {def?.emoji ?? defId}
               </button>
             )
           })}
@@ -101,7 +101,7 @@ export function ReelView({ reel, onPrestige }: Props) {
               key={icon.id}
               className="icon-cell"
             >
-              {def?.label ?? '?'}
+              {def?.emoji ?? '?'}
             </div>
           )
         })}

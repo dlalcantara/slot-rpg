@@ -183,7 +183,7 @@ describe('US2: rendered grid changes after magic actions', () => {
 
     fireEvent.click(screen.getByTestId('test-respin-0'))
 
-    expect(screen.getAllByText('🟠').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('🟤').length).toBeGreaterThan(0)
   })
 
   it('rendered grid text changes after MAGIC_SWAP', () => {
@@ -213,7 +213,7 @@ describe('US2: rendered grid changes after magic actions', () => {
     fireEvent.click(screen.getByTestId('test-swap'))
 
     // After swap row 0 and row 1, copper (originally row 1) should still be visible
-    expect(screen.getAllByText('🟠').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('🟤').length).toBeGreaterThan(0)
   })
 })
 

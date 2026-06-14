@@ -20,7 +20,7 @@ body {
 
 .icon-cell {
   @apply w-12 h-12 flex items-center justify-center font-bold border border-gray-600 rounded bg-gray-800 select-none overflow-hidden;
-  font-size: 0.75rem;
+  font-size: 1.75rem;
   line-height: 1;
 }
 

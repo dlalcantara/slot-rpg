@@ -51,7 +51,7 @@ describe('CurrencyDisplay', () => {
 
   it('each cell contains the correct emoji character', () => {
     render(<CurrencyDisplay currencies={allZero} spinCount={0} />)
-    for (const emoji of ['🍎', '🟠', '⚪', '🟡', '👑', '💨', '💧', '🌿', '🔥', '🎰']) {
+    for (const emoji of ['🍎', '🟤', '⚪', '🟡', '👑', '💨', '💧', '🌿', '🔥', '🎰']) {
       expect(screen.getByText(emoji)).toBeDefined()
     }
   })

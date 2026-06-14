@@ -97,7 +97,7 @@ export const CURRENCY_ORDER = ['food', 'copper', 'silver', 'gold', 'crowns', 'ai
 
 export const CURRENCY_EMOJI: Record<string, string> = {
   food: '🍎',
-  copper: '🟠',
+  copper: '🟤',
   silver: '⚪',
   gold: '🟡',
   crowns: '👑',
