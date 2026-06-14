@@ -23,7 +23,7 @@ describe('SpinResultToast', () => {
       />,
     )
     expect(screen.getByText(/\+5/)).toBeInTheDocument()
-    expect(screen.getByText(/food/i)).toBeInTheDocument()
+    expect(screen.getByText(/apple/i)).toBeInTheDocument()
   })
 
   it('has role="status" for accessibility', () => {

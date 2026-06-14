@@ -626,3 +626,28 @@ describe('checkNewAchievements — happily-ever-after', () => {
     expect(result).not.toContain('happily-ever-after')
   })
 })
+
+// ─── US3: Description fixes and ordering (T010) ───────────────────────────────
+
+describe('ACHIEVEMENTS — US3 description fixes', () => {
+  it('second-breakfast description equals "Earn >= 2 Apple in one spin."', () => {
+    const a = ACHIEVEMENTS.find((a) => a.id === 'second-breakfast')
+    expect(a?.description).toBe('Earn >= 2 Apple in one spin.')
+  })
+
+  it('master-of-elements description equals "Earn all four elements in one spin."', () => {
+    const a = ACHIEVEMENTS.find((a) => a.id === 'master-of-elements')
+    expect(a?.description).toBe('Earn all four elements in one spin.')
+  })
+
+  it('how-do-you-like-them-apples description contains "Reels Store"', () => {
+    const a = ACHIEVEMENTS.find((a) => a.id === 'how-do-you-like-them-apples')
+    expect(a?.description).toContain('Reels Store')
+  })
+
+  it('blow-it-up index is less than be-water-my-friend index', () => {
+    const blowIdx = ACHIEVEMENTS.findIndex((a) => a.id === 'blow-it-up')
+    const waterIdx = ACHIEVEMENTS.findIndex((a) => a.id === 'be-water-my-friend')
+    expect(blowIdx).toBeLessThan(waterIdx)
+  })
+})

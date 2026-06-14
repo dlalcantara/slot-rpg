@@ -2,6 +2,15 @@ import { describe, it, expect } from 'vitest'
 import { ICON_CATALOG } from '@/game/catalog'
 import { CURRENCY_REGISTRY } from '@/game/currencyRegistry'
 
+describe('ICON_CATALOG emoji field', () => {
+  it('every entry has a non-empty emoji field', () => {
+    for (const [id, def] of Object.entries(ICON_CATALOG)) {
+      expect(def.emoji, `${id} missing emoji`).toBeDefined()
+      expect(def.emoji.length, `${id} emoji is empty`).toBeGreaterThan(0)
+    }
+  })
+})
+
 describe('elemental icon definitions', () => {
   it.each(['air', 'water', 'earth', 'fire'])('%s exists in catalog', (id) => {
     expect(ICON_CATALOG[id]).toBeDefined()

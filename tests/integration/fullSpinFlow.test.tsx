@@ -43,7 +43,7 @@ describe('full spin flow integration', () => {
   it('shows spin button and food counter on load', () => {
     render(<App />)
     expect(screen.getByRole('button', { name: 'Spin the reels' })).toBeInTheDocument()
-    expect(screen.getAllByText(/food/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/apple/i).length).toBeGreaterThan(0)
   })
 
   it('food decrements after clicking SPIN (deducted at spin time)', () => {

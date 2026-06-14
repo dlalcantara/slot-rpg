@@ -18,10 +18,12 @@ import { CheatPanel } from './components/CheatPanel'
 import { AchievementsTab } from './components/AchievementsTab'
 import { AchievementDialog } from './components/AchievementDialog'
 import { StarvationModal } from './components/StarvationModal'
+import { HelpModal } from './components/HelpModal'
 import type { Currencies, MagicMode, SpinResult } from './game/types'
 import type { AchievementId } from './game/achievements'
 
 type ActiveTab = 'reel' | 'spin' | 'market' | 'achievements'
+type HelpTopic = 'game' | 'reel' | 'spin' | 'market' | 'achievements'
 
 function loadOrInit() {
   return loadState() ?? makeInitialState()
@@ -37,6 +39,7 @@ export default function App() {
   const [toastResult, setToastResult] = useState<SpinResult | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showCheat, setShowCheat] = useState(false)
+  const [helpTopic, setHelpTopic] = useState<HelpTopic | null>(null)
   const titleClickCountRef = useRef(0)
   const [displayedCurrencies, setDisplayedCurrencies] = useState<Currencies>(() => loadOrInit().currencies)
   const prevCurrenciesRef = useRef<Currencies>(state.currencies)
@@ -136,7 +139,7 @@ export default function App() {
   const tabs: { id: ActiveTab; label: string }[] = [
     { id: 'reel', label: 'Reel' },
     { id: 'spin', label: 'Spin' },
-    { id: 'market', label: 'Market' },
+    { id: 'market', label: 'Reels Store' },
     { id: 'achievements', label: 'Feats' },
   ]
 
@@ -146,12 +149,22 @@ export default function App() {
     <div className="min-h-screen bg-gray-900 flex items-start justify-center">
       <div className="w-full max-w-lg mx-auto p-2 space-y-2">
         <div className="flex items-center justify-between">
-          <h1
-            className="text-xl font-bold text-gray-100 select-none cursor-default"
-            onClick={handleTitleClick}
-          >
-            Slot RPG
-          </h1>
+          <div className="flex items-center gap-1">
+            <h1
+              className="text-xl font-bold text-gray-100 select-none cursor-default"
+              onClick={handleTitleClick}
+            >
+              Slot RPG
+            </h1>
+            <button
+              type="button"
+              aria-label="Help: About the game"
+              onClick={() => setHelpTopic('game')}
+              className="text-gray-400 hover:text-gray-200 text-sm px-1"
+            >
+              ❓
+            </button>
+          </div>
           <HardResetButton onReset={handleReset} />
         </div>
 
@@ -159,17 +172,26 @@ export default function App() {
 
         <div className="flex gap-1 bg-gray-800 rounded-xl p-1 border border-gray-700">
           {tabs.map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                activeTab === id
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              {label}
-            </button>
+            <div key={id} className="relative flex-1">
+              <button
+                onClick={() => setActiveTab(id)}
+                className={`w-full py-2 pr-5 rounded-lg text-sm font-semibold transition-colors ${
+                  activeTab === id
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                {label}
+              </button>
+              <button
+                type="button"
+                aria-label={`Help: ${label}`}
+                onClick={() => setHelpTopic(id as HelpTopic)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-xs opacity-60 hover:opacity-100 leading-none"
+              >
+                ❓
+              </button>
+            </div>
           ))}
         </div>
 
@@ -263,6 +285,7 @@ export default function App() {
           achievementId={pendingDialogs[0] ?? null}
           onDismiss={handleDismissAchievement}
         />
+        {helpTopic && <HelpModal topic={helpTopic} onClose={() => setHelpTopic(null)} />}
         {showCheat && (
           <CheatPanel
             currencies={state.currencies}

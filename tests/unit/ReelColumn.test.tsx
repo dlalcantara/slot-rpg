@@ -47,7 +47,7 @@ describe('ReelColumn icon sync (US2)', () => {
 
   it('updates displayed icons when icons prop changes and spinning is false', () => {
     const { rerender } = renderColumn({ icons: appleIcons, spinning: false })
-    expect(screen.getAllByText('Apple')).toHaveLength(3)
+    expect(screen.getAllByText('🍎')).toHaveLength(3)
 
     rerender(
       <ReelColumn
@@ -67,8 +67,8 @@ describe('ReelColumn icon sync (US2)', () => {
       />
     )
 
-    expect(screen.queryAllByText('Apple')).toHaveLength(0)
-    expect(screen.getAllByText('Copper')).toHaveLength(3)
+    expect(screen.queryAllByText('🍎')).toHaveLength(0)
+    expect(screen.getAllByText('🟠')).toHaveLength(3)
   })
 
   it('does not sync icons when animation is in flight', () => {
@@ -91,7 +91,7 @@ describe('ReelColumn icon sync (US2)', () => {
       />
     )
     act(() => { vi.advanceTimersByTime(5000) })
-    expect(screen.getAllByText('Copper')).toHaveLength(3)
+    expect(screen.getAllByText('🟠')).toHaveLength(3)
   })
 })
 
@@ -105,7 +105,7 @@ describe('ReelColumn respin animation (US3)', () => {
     const onDone = vi.fn()
     const { rerender } = renderColumn({ icons: appleIcons, spinning: false, animate: true, respinToken: 0, onDone })
 
-    expect(screen.getAllByText('Apple')).toHaveLength(3)
+    expect(screen.getAllByText('🍎')).toHaveLength(3)
 
     rerender(
       <ReelColumn
@@ -127,13 +127,13 @@ describe('ReelColumn respin animation (US3)', () => {
     )
 
     act(() => { vi.advanceTimersByTime(2000) })
-    expect(screen.getAllByText('Copper')).toHaveLength(3)
+    expect(screen.getAllByText('🟠')).toHaveLength(3)
   })
 
   it('animate off: respinToken change updates immediately with no animation', () => {
     const { rerender } = renderColumn({ icons: appleIcons, spinning: false, animate: false, respinToken: 0 })
 
-    expect(screen.getAllByText('Apple')).toHaveLength(3)
+    expect(screen.getAllByText('🍎')).toHaveLength(3)
 
     rerender(
       <ReelColumn
@@ -153,8 +153,8 @@ describe('ReelColumn respin animation (US3)', () => {
       />
     )
 
-    expect(screen.queryAllByText('Apple')).toHaveLength(0)
-    expect(screen.getAllByText('Copper')).toHaveLength(3)
+    expect(screen.queryAllByText('🍎')).toHaveLength(0)
+    expect(screen.getAllByText('🟠')).toHaveLength(3)
   })
 })
 

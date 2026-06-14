@@ -44,7 +44,7 @@ export function MarketItem({ def, currencies, canBuyMore, onBuy }: Props) {
   return (
     <div className="flex items-center justify-between p-2 bg-gray-700 rounded-lg">
       <div className="flex items-center gap-2">
-        <span className="icon-cell">{def.label}</span>
+        <span className="icon-cell">{def.emoji}</span>
         <div>
           <p className="text-sm font-medium">{def.label}</p>
           {isMultiCost ? (

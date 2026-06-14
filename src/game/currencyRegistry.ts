@@ -3,7 +3,7 @@ import type { CurrencyDefinition } from './types'
 export const CURRENCY_REGISTRY: Record<string, CurrencyDefinition> = {
   food: {
     key: 'food',
-    label: 'Food',
+    label: 'Apple',
     startingAmount: 10,
     autoConvertTo: null,
     convertibleFrom: null,
@@ -93,4 +93,18 @@ export const CURRENCY_REGISTRY: Record<string, CurrencyDefinition> = {
   },
 }
 
-export const CURRENCY_ORDER = ['food', 'gold', 'silver', 'copper', 'crowns', 'air', 'water', 'earth', 'fire']
+export const CURRENCY_ORDER = ['food', 'copper', 'silver', 'gold', 'crowns', 'air', 'water', 'earth', 'fire']
+
+export const CURRENCY_EMOJI: Record<string, string> = {
+  food: '🍎',
+  copper: '🟠',
+  silver: '⚪',
+  gold: '🟡',
+  crowns: '👑',
+  air: '💨',
+  water: '💧',
+  earth: '🌿',
+  fire: '🔥',
+}
+
+export const SPINS_EMOJI = '🎰'

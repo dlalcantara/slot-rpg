@@ -46,7 +46,7 @@ describe('spin settle on real result (US1)', () => {
     // Before fix: displayColumns shows placeholder '[ ]' (lastSpinResult null, isMagicPhase false)
     // After fix: displayColumns shows magicGrid 'Apple' icons regardless of isMagicPhase
     expect(screen.queryAllByText('[ ]')).toHaveLength(0)
-    expect(screen.getAllByText('Apple').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('🍎').length).toBeGreaterThan(0)
   })
 
   it('animation on: after animation settles, grid shows magicGrid symbols not placeholder', () => {
@@ -69,6 +69,6 @@ describe('spin settle on real result (US1)', () => {
 
     // After animation: settled on magicGrid symbols, no placeholder blanks
     expect(screen.queryAllByText('[ ]')).toHaveLength(0)
-    expect(screen.getAllByText('Apple').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('🍎').length).toBeGreaterThan(0)
   })
 })

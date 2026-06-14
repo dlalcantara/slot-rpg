@@ -161,7 +161,7 @@ export function ReelColumn({
               onCellClick(i)
             }}
           >
-            <span>{def?.label ?? '?'}</span>
+            <span>{def?.emoji ?? '?'}</span>
             {hasOverride && (
               <span className="text-xs text-green-400 ml-1">(×{effectiveValue})</span>
             )}

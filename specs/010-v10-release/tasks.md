@@ -21,9 +21,9 @@
 
 **⚠️ CRITICAL**: US2 and US4 tasks cannot begin until this phase is complete.
 
-- [ ] T001 Add `emoji: string` field to `IconDefinition` interface in `src/game/types.ts`
-- [ ] T002 [P] Write failing test asserting every `ICON_CATALOG` entry has a non-empty `emoji` field in `tests/unit/catalog.test.ts` (must see RED before T003)
-- [ ] T003 Add `emoji` field to every entry in `src/game/catalog.ts` using the assignments from `specs/010-v10-release/data-model.md` (blank→⬜, apple→🍎, triple-apple→2x🍎, dozen-apple→3x🍎, copper→🟠, silver→⚪, gold→🟡, crown→👑, air→💨, water→💧, earth→🌿, fire→🔥, energy→⚡); confirm T002 turns GREEN
+- [X] T001 Add `emoji: string` field to `IconDefinition` interface in `src/game/types.ts`
+- [X] T002 [P] Write failing test asserting every `ICON_CATALOG` entry has a non-empty `emoji` field in `tests/unit/catalog.test.ts` (must see RED before T003)
+- [X] T003 Add `emoji` field to every entry in `src/game/catalog.ts` using the assignments from `specs/010-v10-release/data-model.md` (blank→⬜, apple→🍎, triple-apple→2x🍎, dozen-apple→3x🍎, copper→🟠, silver→⚪, gold→🟡, crown→👑, air→💨, water→💧, earth→🌿, fire→🔥, energy→⚡); confirm T002 turns GREEN
 
 **Checkpoint**: `npm run typecheck` exits 0; T002 passes.
 
@@ -39,12 +39,12 @@
 
 > **Write these tests FIRST — confirm RED before implementing T005/T006**
 
-- [ ] T004 [P] [US1] Create `tests/unit/HelpModal.test.tsx`: assert (a) renders correct `<h2>` heading for each topic value; (b) renders AI attribution paragraph when topic is `'game'`; (c) calls `onClose` when close button clicked; (d) "Ways to Win" text appears when topic is `'spin'`
+- [X] T004 [P] [US1] Create `tests/unit/HelpModal.test.tsx`: assert (a) renders correct `<h2>` heading for each topic value; (b) renders AI attribution paragraph when topic is `'game'`; (c) calls `onClose` when close button clicked; (d) "Ways to Win" text appears when topic is `'spin'`
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Create `src/components/HelpModal.tsx`: full-screen backdrop + centered card matching `WinModal`/`StarvationModal` pattern; props `topic: 'game' | 'reel' | 'spin' | 'market' | 'achievements'` and `onClose: () => void`; click-outside closes; content per topic from `specs/010-v10-release/data-model.md` including verbatim AI attribution for `'game'` and Ways to Win scoring for `'spin'`; confirm T004 turns GREEN
-- [ ] T006 [US1] Modify `src/App.tsx`: add `helpTopic` state (`'game' | 'reel' | 'spin' | 'market' | 'achievements' | null`); add ❓ `<button>` adjacent to "Slot RPG" `<h1>` that sets `helpTopic='game'`; inside `tabs.map()` add a small ❓ `<button>` per tab that calls `e.stopPropagation()` and sets `helpTopic` to the tab's id; render `{helpTopic && <HelpModal topic={helpTopic} onClose={() => setHelpTopic(null)} />}` at bottom of component tree
+- [X] T005 [US1] Create `src/components/HelpModal.tsx`: full-screen backdrop + centered card matching `WinModal`/`StarvationModal` pattern; props `topic: 'game' | 'reel' | 'spin' | 'market' | 'achievements'` and `onClose: () => void`; click-outside closes; content per topic from `specs/010-v10-release/data-model.md` including verbatim AI attribution for `'game'` and Ways to Win scoring for `'spin'`; confirm T004 turns GREEN
+- [X] T006 [US1] Modify `src/App.tsx`: add `helpTopic` state (`'game' | 'reel' | 'spin' | 'market' | 'achievements' | null`); add ❓ `<button>` adjacent to "Slot RPG" `<h1>` that sets `helpTopic='game'`; inside `tabs.map()` add a small ❓ `<button>` per tab that calls `e.stopPropagation()` and sets `helpTopic` to the tab's id; render `{helpTopic && <HelpModal topic={helpTopic} onClose={() => setHelpTopic(null)} />}` at bottom of component tree
 
 **Checkpoint**: Help modals functional. Verify manually at 720 × 1280 px per `quickstart.md`.
 
@@ -60,12 +60,12 @@
 
 > **Write these tests FIRST — confirm RED before implementing T008/T009**
 
-- [ ] T007 [P] [US2] Modify `tests/unit/CurrencyDisplay.test.tsx`: add assertions for (a) exactly 10 currency cells rendered; (b) first 5 cells in order: food/Apple, copper, silver, gold, crowns; (c) last 5 cells in order: air, water, earth, fire, spins; (d) each cell contains the correct emoji character
+- [X] T007 [P] [US2] Modify `tests/unit/CurrencyDisplay.test.tsx`: add assertions for (a) exactly 10 currency cells rendered; (b) first 5 cells in order: food/Apple, copper, silver, gold, crowns; (c) last 5 cells in order: air, water, earth, fire, spins; (d) each cell contains the correct emoji character
 
 ### Implementation for User Story 2
 
-- [ ] T008 [P] [US2] Modify `src/game/currencyRegistry.ts`: (a) rename `food` entry label `'Food'` → `'Apple'`; (b) reorder `CURRENCY_ORDER` to `['food', 'copper', 'silver', 'gold', 'crowns', 'air', 'water', 'earth', 'fire']`; (c) add exported `CURRENCY_EMOJI: Record<string, string>` constant mapping each key to its emoji (food→🍎, copper→🟠, silver→⚪, gold→🟡, crowns→👑, air→💨, water→💧, earth→🌿, fire→🔥) plus a `SPINS_EMOJI = '🎰'` export
-- [ ] T009 [US2] Modify `src/components/CurrencyDisplay.tsx`: replace `flex-wrap` layout with `grid grid-cols-5 gap-2`; for each key in `CURRENCY_ORDER` (filtered to exclude `'energy'`) render emoji from `CURRENCY_EMOJI[key]` + value; add Spins as the 10th cell using `SPINS_EMOJI` + `spinCount`; remove `COLOR` record (no longer needed for grid cells); confirm T007 turns GREEN
+- [X] T008 [P] [US2] Modify `src/game/currencyRegistry.ts`: (a) rename `food` entry label `'Food'` → `'Apple'`; (b) reorder `CURRENCY_ORDER` to `['food', 'copper', 'silver', 'gold', 'crowns', 'air', 'water', 'earth', 'fire']`; (c) add exported `CURRENCY_EMOJI: Record<string, string>` constant mapping each key to its emoji (food→🍎, copper→🟠, silver→⚪, gold→🟡, crowns→👑, air→💨, water→💧, earth→🌿, fire→🔥) plus a `SPINS_EMOJI = '🎰'` export
+- [X] T009 [US2] Modify `src/components/CurrencyDisplay.tsx`: replace `flex-wrap` layout with `grid grid-cols-5 gap-2`; for each key in `CURRENCY_ORDER` (filtered to exclude `'energy'`) render emoji from `CURRENCY_EMOJI[key]` + value; add Spins as the 10th cell using `SPINS_EMOJI` + `spinCount`; remove `COLOR` record (no longer needed for grid cells); confirm T007 turns GREEN
 
 **Checkpoint**: Currency panel shows 2×5 emoji grid. Verify at 720 × 1280 px.
 
@@ -81,12 +81,12 @@
 
 > **Write these tests FIRST — confirm RED before implementing T011/T012**
 
-- [ ] T010 [P] [US3] Modify `tests/unit/achievements.test.ts`: add assertions for (a) `second-breakfast` description equals `'Earn >= 2 Apple in one spin.'`; (b) `master-of-elements` description equals `'Earn all four elements in one spin.'`; (c) `how-do-you-like-them-apples` description contains `'Reels Store'`; (d) index of `blow-it-up` in `ACHIEVEMENTS` array is less than index of `be-water-my-friend`
+- [X] T010 [P] [US3] Modify `tests/unit/achievements.test.ts`: add assertions for (a) `second-breakfast` description equals `'Earn >= 2 Apple in one spin.'`; (b) `master-of-elements` description equals `'Earn all four elements in one spin.'`; (c) `how-do-you-like-them-apples` description contains `'Reels Store'`; (d) index of `blow-it-up` in `ACHIEVEMENTS` array is less than index of `be-water-my-friend`
 
 ### Implementation for User Story 3
 
-- [ ] T011 [P] [US3] Modify `src/game/achievements.ts`: fix `second-breakfast` description → `'Earn >= 2 Apple in one spin.'`; fix `master-of-elements` description → `'Earn all four elements in one spin.'`; update `how-do-you-like-them-apples` description → `'Buy an apple from the Reels Store.'`
-- [ ] T012 [P] [US3] Modify `src/game/achievements.ts`: move the `blow-it-up` entry in the `ACHIEVEMENTS` array to appear immediately before the `be-water-my-friend` entry; confirm T010 turns GREEN
+- [X] T011 [P] [US3] Modify `src/game/achievements.ts`: fix `second-breakfast` description → `'Earn >= 2 Apple in one spin.'`; fix `master-of-elements` description → `'Earn all four elements in one spin.'`; update `how-do-you-like-them-apples` description → `'Buy an apple from the Reels Store.'`
+- [X] T012 [P] [US3] Modify `src/game/achievements.ts`: move the `blow-it-up` entry in the `ACHIEVEMENTS` array to appear immediately before the `be-water-my-friend` entry; confirm T010 turns GREEN
 
 **Checkpoint**: All three achievement description tests pass; feat order visually correct in Feats tab.
 
@@ -102,14 +102,14 @@
 
 > **Write these tests FIRST — confirm RED before implementing T014–T017**
 
-- [ ] T013 [P] [US4] Create `tests/unit/SpinControls.test.tsx`: assert no element with text matching `/x1/i` is rendered by `<SpinControls>`
+- [X] T013 [P] [US4] Create `tests/unit/SpinControls.test.tsx`: assert no element with text matching `/x1/i` is rendered by `<SpinControls>`
 
 ### Implementation for User Story 4
 
-- [ ] T014 [P] [US4] Rename "Market" → "Reels Store" in two places: (a) update `label` of the `'market'` entry in the `tabs` array in `src/App.tsx` from `'Market'` to `'Reels Store'`; (b) update the `<h3>` heading text in `src/components/Market.tsx` from `'Market'` to `'Reels Store'`
-- [ ] T015 [P] [US4] Remove the multiplier toggle `<div>` (the block containing `{MULTIPLIERS.map(...)}`) from `src/components/SpinControls.tsx`; confirm T013 turns GREEN
-- [ ] T016 [P] [US4] Modify `src/components/ReelColumn.tsx`: replace `def?.label ?? '?'` with `def?.emoji ?? '?'` in the icon cell `<span>` on line 164 (depends on T003)
-- [ ] T017 [P] [US4] Modify `src/components/MarketItem.tsx`: replace `def.label` with `def.emoji` in the `icon-cell` `<span>` on line 47 (the icon display); keep `def.label` in the `<p className="text-sm font-medium">` name line and `aria-label` (depends on T003)
+- [X] T014 [P] [US4] Rename "Market" → "Reels Store" in two places: (a) update `label` of the `'market'` entry in the `tabs` array in `src/App.tsx` from `'Market'` to `'Reels Store'`; (b) update the `<h3>` heading text in `src/components/Market.tsx` from `'Market'` to `'Reels Store'`
+- [X] T015 [P] [US4] Remove the multiplier toggle `<div>` (the block containing `{MULTIPLIERS.map(...)}`) from `src/components/SpinControls.tsx`; confirm T013 turns GREEN
+- [X] T016 [P] [US4] Modify `src/components/ReelColumn.tsx`: replace `def?.label ?? '?'` with `def?.emoji ?? '?'` in the icon cell `<span>` on line 164 (depends on T003)
+- [X] T017 [P] [US4] Modify `src/components/MarketItem.tsx`: replace `def.label` with `def.emoji` in the `icon-cell` `<span>` on line 47 (the icon display); keep `def.label` in the `<p className="text-sm font-medium">` name line and `aria-label` (depends on T003)
 
 **Checkpoint**: All US4 tests pass. Manually verify reel and store show emoji, tab reads "Reels Store", x1 gone.
 
@@ -119,13 +119,13 @@
 
 **Purpose**: Final validation across all changes.
 
-- [ ] T018 [P] Run `quickstart.md` manual verification checklist at 720 × 1280 px: help modals readable, currency grid not clipped, emoji icons fit icon-cell bounding boxes, all renamed labels correct
-- [ ] T019 **[GATE 1] Typecheck** — `tsc --noEmit` exits 0 (blocks next gates)
-- [ ] T020 **[GATE 2] Lint** — `npm run lint` exits 0 with zero errors
-- [ ] T021 **[GATE 3] Unit Tests** — `npm run test:unit` — all unit tests pass
-- [ ] T022 **[GATE 4] Integration Tests** — `npm run test:integration` — all integration tests pass
-- [ ] T023 **[GATE 5] Build** — `npm run build` compiles cleanly with no warnings-as-errors
-- [ ] T024 **[GATE 6] Bundle Size** — gzipped JS bundle ≤ 250 KB; record before/after delta in PR description
+- [X] T018 [P] Run `quickstart.md` manual verification checklist at 720 × 1280 px: help modals readable, currency grid not clipped, emoji icons fit icon-cell bounding boxes, all renamed labels correct
+- [X] T019 **[GATE 1] Typecheck** — `tsc --noEmit` exits 0 (blocks next gates)
+- [X] T020 **[GATE 2] Lint** — `npm run lint` exits 0 with zero errors
+- [X] T021 **[GATE 3] Unit Tests** — `npm run test:unit` — all unit tests pass
+- [X] T022 **[GATE 4] Integration Tests** — `npm run test:integration` — all integration tests pass
+- [X] T023 **[GATE 5] Build** — `npm run build` compiles cleanly with no warnings-as-errors
+- [X] T024 **[GATE 6] Bundle Size** — gzipped JS bundle ≤ 250 KB; record before/after delta in PR description — Result: 59.69 KB gzip (well under 250 KB limit)
 
 ---
 

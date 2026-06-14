@@ -29,13 +29,13 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: 'how-do-you-like-them-apples',
     title: 'How Do You Like Them Apples',
-    description: 'Buy an apple from the Market.',
+    description: 'Buy an apple from the Reels Store.',
     isWip: false,
   },
   {
     id: 'second-breakfast',
     title: 'Second Breakfast',
-    description: 'Earn food from at least 2 apple-family icons in a single spin.',
+    description: 'Earn >= 2 Apple in one spin.',
     isWip: false,
   },
   {
@@ -63,6 +63,12 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     isWip: false,
   },
   {
+    id: 'blow-it-up',
+    title: 'Blow it up',
+    description: 'Use the respin action and earn even more as a result.',
+    isWip: false,
+  },
+  {
     id: 'be-water-my-friend',
     title: 'Be Water, My Friend',
     description: 'Use a swap during magic phase and earn from two different icon families.',
@@ -87,12 +93,6 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     isWip: false,
   },
   {
-    id: 'blow-it-up',
-    title: 'Blow it up',
-    description: 'Use the respin action and earn even more as a result.',
-    isWip: false,
-  },
-  {
     id: 'sweet',
     title: 'Sweet',
     description: 'Earn ≥16 energy in a single spin.',
@@ -107,7 +107,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: 'master-of-elements',
     title: 'Master of Elements',
-    description: 'Have all four elements — Air, Water, Earth, and Fire — appear in a single spin.',
+    description: 'Earn all four elements in one spin.',
     isWip: false,
   },
   {

@@ -9,6 +9,7 @@ export interface IconDefinition {
   family: string
   valuePerColumn: number
   label: string
+  emoji: string
   effect: IconEffect
   cost: { currency: CurrencyKey; amount: number } | null
   multiCost: { currency: CurrencyKey; amount: number }[] | null
