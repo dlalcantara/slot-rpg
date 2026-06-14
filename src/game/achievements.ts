@@ -183,8 +183,8 @@ export function checkNewAchievements(
       if (allTotal > activeTotal) tryEarn('why')
     }
 
-    // blow-it-up: magic was used, initial spin was non-zero, claim total > initial total
-    if (prevState.phase === 'magic') {
+    // blow-it-up: respin was used, initial spin was non-zero, claim total > initial total
+    if (prevState.magicCounters.respin > 0) {
       const sumPayouts = (payouts: import('./types').Payout[] | null) =>
         (payouts ?? []).reduce((sum, p) => sum + p.amount, 0)
       const initialTotal = sumPayouts(prevState.initialSpinPayouts)

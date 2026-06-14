@@ -24,6 +24,63 @@ const reel: Reel = {
   ],
 }
 
+// ─── rowCount expansion display (energy bug regression) ─────────────────────
+
+describe('SlotGrid rowCount expansion display', () => {
+  it('shows 4-row placeholder grid when rowCount=4 but lastSpinResult has 3-row columns', () => {
+    const threeRowCols = Array(5).fill(null).map(() => [
+      { id: 'a1', definitionId: 'apple' },
+      { id: 'a2', definitionId: 'apple' },
+      { id: 'a3', definitionId: 'apple' },
+    ])
+    render(
+      <SlotGrid
+        lastSpinResult={{ columns: threeRowCols, payouts: [] }}
+        magicGrid={null}
+        blockedColumns={[]}
+        reel={reel}
+        rowCount={4}
+        spinning={false}
+        animate={false}
+        isMagicPhase={false}
+        onSpinDone={vi.fn()}
+        onMagicAction={vi.fn()}
+      />
+    )
+    // With the fix: shows placeholder grid sized to rowCount=4 (5 cols × 4 rows = 20 cells)
+    const listitems = screen.getAllByRole('listitem')
+    expect(listitems).toHaveLength(20)
+  })
+
+  it('shows lastSpinResult when its row count matches rowCount', () => {
+    const threeRowCols = Array(5).fill(null).map(() => [
+      { id: 'a1', definitionId: 'apple' },
+      { id: 'a2', definitionId: 'apple' },
+      { id: 'a3', definitionId: 'apple' },
+    ])
+    render(
+      <SlotGrid
+        lastSpinResult={{ columns: threeRowCols, payouts: [] }}
+        magicGrid={null}
+        blockedColumns={[]}
+        reel={reel}
+        rowCount={3}
+        spinning={false}
+        animate={false}
+        isMagicPhase={false}
+        onSpinDone={vi.fn()}
+        onMagicAction={vi.fn()}
+      />
+    )
+    // rowCount=3 matches lastSpinResult's 3-row columns → shows apple icons
+    expect(screen.getAllByText('🍎').length).toBeGreaterThan(0)
+    const listitems = screen.getAllByRole('listitem')
+    expect(listitems).toHaveLength(15) // 5 cols × 3 rows
+  })
+})
+
+// ────────────────────────────────────────────────────────────────────────────
+
 describe('spin settle on real result (US1)', () => {
   beforeEach(() => vi.useFakeTimers())
   afterEach(() => vi.useRealTimers())

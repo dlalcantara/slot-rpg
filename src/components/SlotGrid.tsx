@@ -62,9 +62,12 @@ export function SlotGrid({
   onSwapFrom = () => {},
 }: Props) {
   const placeholderCol = Array(rowCount).fill(PLACEHOLDER_ICON)
+  const lastCols = lastSpinResult?.columns
   const displayColumns: Icon[][] = magicGrid
     ? magicGrid.map((col) => col.map((cell) => cell.icon))
-    : (lastSpinResult?.columns ?? Array(5).fill(placeholderCol))
+    : lastCols && lastCols[0]?.length === rowCount
+      ? lastCols
+      : Array(5).fill(placeholderCol)
 
   const valueOverrides: Map<string, number> = isMagicPhase && magicGrid
     ? (() => {

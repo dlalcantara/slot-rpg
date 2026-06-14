@@ -469,45 +469,45 @@ describe('i-understand-it-now description (T029)', () => {
 
 describe('checkNewAchievements — blow-it-up (T033)', () => {
   function blowItUpState(options: {
-    prevPhase?: 'magic' | 'spinning'
+    respin?: number
     initialTotal?: number
     claimTotal?: number
   }) {
-    const { prevPhase = 'magic', initialTotal = 5, claimTotal = 8 } = options
+    const { respin = 1, initialTotal = 5, claimTotal = 8 } = options
     const grid = makeGrid([['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank'], ['blank', 'blank', 'blank']])
     const initialPayouts = initialTotal > 0 ? [{ family: 'food', amount: initialTotal, currency: 'food' }] : []
-    const prev = { ...magicStateWith(grid), phase: prevPhase as 'magic', initialSpinPayouts: initialPayouts }
+    const prev = { ...magicStateWith(grid), magicCounters: { respin, swap: 0, increaseValue: 0 }, initialSpinPayouts: initialPayouts }
     const next = baseState()
     const claimPayouts = [{ family: 'food', amount: claimTotal, currency: 'food' }]
     return { prev, next, claimPayouts }
   }
 
-  it('earned when magic was used, initial total=5, claim total=8', () => {
-    const { prev, next, claimPayouts } = blowItUpState({ prevPhase: 'magic', initialTotal: 5, claimTotal: 8 })
+  it('earned when respin was used and claim total exceeds initial total', () => {
+    const { prev, next, claimPayouts } = blowItUpState({ respin: 1, initialTotal: 5, claimTotal: 8 })
     const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
     expect(result).toContain('blow-it-up')
   })
 
   it('NOT earned when claim total equals initial total (not strictly more)', () => {
-    const { prev, next, claimPayouts } = blowItUpState({ prevPhase: 'magic', initialTotal: 5, claimTotal: 5 })
+    const { prev, next, claimPayouts } = blowItUpState({ respin: 1, initialTotal: 5, claimTotal: 5 })
     const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
     expect(result).not.toContain('blow-it-up')
   })
 
   it('NOT earned when claim total is less than initial total', () => {
-    const { prev, next, claimPayouts } = blowItUpState({ prevPhase: 'magic', initialTotal: 5, claimTotal: 3 })
+    const { prev, next, claimPayouts } = blowItUpState({ respin: 1, initialTotal: 5, claimTotal: 3 })
     const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
     expect(result).not.toContain('blow-it-up')
   })
 
-  it('NOT earned when magic was not used (prevPhase=spinning)', () => {
-    const { prev, next, claimPayouts } = blowItUpState({ prevPhase: 'spinning', initialTotal: 5, claimTotal: 8 })
+  it('NOT earned when respin was not used (respin counter = 0)', () => {
+    const { prev, next, claimPayouts } = blowItUpState({ respin: 0, initialTotal: 5, claimTotal: 8 })
     const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
     expect(result).not.toContain('blow-it-up')
   })
 
   it('NOT earned when initial spin was zero', () => {
-    const { prev, next, claimPayouts } = blowItUpState({ prevPhase: 'magic', initialTotal: 0, claimTotal: 5 })
+    const { prev, next, claimPayouts } = blowItUpState({ respin: 1, initialTotal: 0, claimTotal: 5 })
     const result = checkNewAchievements(prev, next, { type: 'CLAIM' }, claimPayouts)
     expect(result).not.toContain('blow-it-up')
   })

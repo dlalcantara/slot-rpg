@@ -9,8 +9,7 @@ const CONTENT: Record<Props['topic'], { heading: string; body: React.ReactNode }
     body: (
       <>
         <p>Slot RPG is a slot-machine game where you earn currencies by spinning the reel. Use your earnings to buy new icons and add them to your reel, creating more powerful combinations.</p>
-        <p>After each spin you enter the <strong>magic phase</strong>, where you can respin a column, swap two icons, block a column, or increase an icon's value — then claim your results.</p>
-        <p>Upgrade through tiers: earn Copper → Silver → Gold → Crowns. Collect all four elemental currencies to unlock the Energy icon. Prestige to start fresh while keeping a few icons.</p>
+        <p>After each spin you enter the <strong>magic phase</strong>, where you can manipulate the icons before claiming your results.</p>
         <p className="text-xs text-gray-400 border-t border-gray-600 pt-3 mt-2"><strong>AI &amp; Attribution</strong> — Claude (an AI assistant) was used only for programming this game. The design is original and no AI-generated art assets were used.</p>
       </>
     ),
@@ -20,7 +19,7 @@ const CONTENT: Record<Props['topic'], { heading: string; body: React.ReactNode }
     body: (
       <>
         <p>The <strong>Reel</strong> is the pool of icons that can appear when you spin. Each icon you buy is added to the reel and will show up in future spins.</p>
-        <p><strong>Prestige</strong> resets your currencies and reel back to the start, but lets you keep up to two icons you've already unlocked — useful for building momentum in a new run.</p>
+        <p><strong>Prestige</strong> resets your currencies and reel back to the start, but lets you keep up to two icons you've already unlocked.</p>
       </>
     ),
   },
@@ -28,7 +27,8 @@ const CONTENT: Record<Props['topic'], { heading: string; body: React.ReactNode }
     heading: 'The Spin Tab',
     body: (
       <>
-        <p><strong>Ways to Win</strong> — this slot machine uses a "Ways to Win" system. When identical icon families appear across all columns from left to right, you earn currency by multiplying the number of matching icons in each column together.</p>
+        <p><strong>Ways to Win</strong> — this slot machine uses a "Ways to Win" system. When identical icons appear across all columns, you earn currency by multiplying the number of matching icons in each column.</p>
+        <p>Each spin costs one 🍎 Apple.  Be careful not to run out!</p>
         <p>After each spin you enter the <strong>magic phase</strong> with optional actions:</p>
         <ul className="list-disc list-inside space-y-1 text-sm">
           <li><strong>Respin</strong> a column to re-roll its icons</li>
@@ -45,7 +45,6 @@ const CONTENT: Record<Props['topic'], { heading: string; body: React.ReactNode }
     body: (
       <>
         <p>The <strong>Reels Store</strong> lets you spend currencies to buy new icons and add them to your reel.</p>
-        <p>Icons come in three cost tiers: <strong>Copper</strong> (cheap), <strong>Silver</strong> (mid-tier), and <strong>Gold</strong> (expensive). Higher-tier icons produce more valuable payouts.</p>
         <p>You cannot buy an icon if it would fill more than half of your reel slots with that single icon type.</p>
       </>
     ),
@@ -55,7 +54,6 @@ const CONTENT: Record<Props['topic'], { heading: string; body: React.ReactNode }
     body: (
       <>
         <p><strong>Feats</strong> are achievements that unlock automatically when you meet in-game conditions. Check the Feats tab to see your progress.</p>
-        <p>The <strong>Happily Ever After</strong> feat is a meta-achievement — it unlocks only once you've earned all other feats.</p>
       </>
     ),
   },
