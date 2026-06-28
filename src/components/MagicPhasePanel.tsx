@@ -8,6 +8,7 @@ interface Props {
   magicMode: MagicMode
   swapFrom: { col: number; row: number } | null
   onSelectMode: (mode: MagicMode) => void
+  onHelp?: () => void
 }
 
 function cost(n: number) {
@@ -50,7 +51,7 @@ function ActionRow({ mode, label, currencyLabel, currentCost, available, disable
   )
 }
 
-export function MagicPhasePanel({ currencies, magicCounters, blockedColumns, multiplier, magicMode, swapFrom, onSelectMode }: Props) {
+export function MagicPhasePanel({ currencies, magicCounters, blockedColumns, multiplier, magicMode, swapFrom, onSelectMode, onHelp }: Props) {
   const air = currencies.air ?? 0
   const water = currencies.water ?? 0
   const earth = currencies.earth ?? 0
@@ -67,7 +68,19 @@ export function MagicPhasePanel({ currencies, magicCounters, blockedColumns, mul
 
   return (
     <div className="bg-gray-800 rounded-xl border border-purple-700 p-3 space-y-2">
-      <h3 className="text-sm font-bold text-purple-300 uppercase tracking-wider">✨ Magic Phase</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-purple-300 uppercase tracking-wider">✨ Magic Phase</h3>
+        {onHelp && (
+          <button
+            type="button"
+            aria-label="Help: Magic Phase"
+            onClick={onHelp}
+            className="text-gray-400 hover:text-gray-200 text-sm px-1"
+          >
+            ❓
+          </button>
+        )}
+      </div>
       <p className="text-xs text-gray-400">Click an action below, then act on the grid.</p>
 
       <div className="space-y-1">

@@ -22,9 +22,9 @@
 
 **⚠️ CRITICAL**: Complete this phase before writing any tests or implementing any user story.
 
-- [ ] T001 Add `autoClaim: boolean` (default `false`) to `PlayerSettings` interface and `DEFAULT_SETTINGS` in `src/game/types.ts`
-- [ ] T002 [P] Extend `Props['topic']` union type in `src/components/HelpModal.tsx` to include `'magic'` (type-only change; do NOT add CONTENT entry yet)
-- [ ] T003 [P] Extend `HelpTopic` type alias in `src/App.tsx` to include `'magic'`
+- [X] T001 Add `autoClaim: boolean` (default `false`) to `PlayerSettings` interface and `DEFAULT_SETTINGS` in `src/game/types.ts`
+- [X] T002 [P] Extend `Props['topic']` union type in `src/components/HelpModal.tsx` to include `'magic'` (type-only change; do NOT add CONTENT entry yet)
+- [X] T003 [P] Extend `HelpTopic` type alias in `src/App.tsx` to include `'magic'`
 
 **Checkpoint**: `npm run typecheck` passes. No runtime changes yet.
 
@@ -40,11 +40,11 @@
 
 > **Write this test first — confirm it FAILS before implementing T005**
 
-- [ ] T004 [US6] Add failing integration test to `tests/integration/magicPhase.test.tsx` (new `describe` block): render `<App>` with `animate: false` via mocked `loadState`; spin → advance timers → click CLAIM; assert `CurrencyDisplay` shows the updated currency total immediately (not after a 3-second delay); use `vi.useFakeTimers()` and advance time by < 3000 ms after claim to prove no timer dependency
+- [X] T004 [US6] Add failing integration test to `tests/integration/magicPhase.test.tsx` (new `describe` block): render `<App>` with `animate: false` via mocked `loadState`; spin → advance timers → click CLAIM; assert `CurrencyDisplay` shows the updated currency total immediately (not after a 3-second delay); use `vi.useFakeTimers()` and advance time by < 3000 ms after claim to prove no timer dependency
 
 ### Implementation for US6
 
-- [ ] T005 [US6] Fix `displayedCurrencies` update in `src/App.tsx`: in the `useEffect` that depends on `[state.lastSpinResult]`, add `setDisplayedCurrencies(state.currencies)` immediately after `setToastResult(state.lastSpinResult)`; remove `setDisplayedCurrencies` from the `setTimeout` callback (keep only `setToastResult(null)` in the timer)
+- [X] T005 [US6] Fix `displayedCurrencies` update in `src/App.tsx`: in the `useEffect` that depends on `[state.lastSpinResult]`, add `setDisplayedCurrencies(state.currencies)` immediately after `setToastResult(state.lastSpinResult)`; remove `setDisplayedCurrencies` from the `setTimeout` callback (keep only `setToastResult(null)` in the timer)
 
 **Checkpoint**: `npm run test:integration` — T004 now passes. Currency display no longer waits for the toast timer.
 
@@ -60,7 +60,7 @@
 
 > **Write these tests first — confirm they FAIL before implementing T007**
 
-- [ ] T006 [US1] Add failing unit tests to `tests/unit/HelpModal.test.tsx` for the updated `spin` topic:
+- [X] T006 [US1] Add failing unit tests to `tests/unit/HelpModal.test.tsx` for the updated `spin` topic:
   - `topic="spin"` body contains text matching the worked example (verify presence of multiplied Apple count, e.g. "4" or "2 × 1")
   - `topic="spin"` body contains "Air" and a phrase indicating it does not pay out (e.g. "not in every column")
   - `topic="spin"` body contains "Reels Store"
@@ -68,7 +68,7 @@
 
 ### Implementation for US1
 
-- [ ] T007 [US1] Update `spin` topic body in `src/components/HelpModal.tsx`:
+- [X] T007 [US1] Update `spin` topic body in `src/components/HelpModal.tsx`:
   - Keep "Ways to Win" paragraph
   - Add worked example grid (2×🍎 / 🟤 / 🍎 / 💨 / 🍎 rows) with explanations: "4 🍎 Apples (2 × 1 × 2 × 1 × 1)", "1 🟤 Copper (1 × 1 × 1 × 1 × 1)", "💨 Air does not pay out — not present in every column"
   - Keep the Apple spin-cost sentence
@@ -89,7 +89,7 @@
 
 > **Write these tests first — confirm they FAIL before implementing T009**
 
-- [ ] T008 [US5] Create `tests/unit/ReelView.test.tsx` (new file) with:
+- [X] T008 [US5] Create `tests/unit/ReelView.test.tsx` (new file) with:
   - Helper `makeReel(defs: string[]): Reel` that builds a reel from definition IDs
   - Test: reel with `['apple', 'apple', 'copper']` renders exactly 2 icon cells (not 3); apple cell shows count "2"; copper cell shows count "1"
   - Test: reel with `['apple']` renders one icon cell showing count "1"
@@ -98,7 +98,7 @@
 
 ### Implementation for US5
 
-- [ ] T009 [US5] Update non-prestige icon display in `src/components/ReelView.tsx`:
+- [X] T009 [US5] Update non-prestige icon display in `src/components/ReelView.tsx`:
   - Replace `sortedIcons.map((icon) => ...)` loop with `[...countByDefId.entries()].sort(([a],[b]) => a.localeCompare(b)).map(([defId, count]) => ...)` — key on `defId` not `icon.id`
   - Each cell renders `def?.emoji`, existing `×N` multiplier badge (`absolute bottom-0.5 right-0.5`), and a new count badge (`absolute top-0 left-0 text-xs font-bold text-white bg-gray-900/70 rounded-br px-0.5 leading-none`) showing `{count}`
   - Remove the now-unused `sortedIcons` variable declaration
@@ -117,19 +117,19 @@
 
 > **Write these tests first — confirm they FAIL before implementing T012–T014**
 
-- [ ] T010 [P] [US7] Update `tests/unit/SpinControls.test.tsx`:
+- [X] T010 [P] [US7] Update `tests/unit/SpinControls.test.tsx`:
   - Add `autoClaim: false` to the existing `defaultSettings` constant (required now that `PlayerSettings` has `autoClaim`)
   - Add test: renders "Auto-claim" checkbox label
   - Add test: with `autoClaim: false` in settings, checkbox is unchecked
   - Add test: with `autoClaim: true` in settings, checkbox is checked
   - Add test: ticking the checkbox calls `onSettingsChange({ autoClaim: true })`
-- [ ] T011 [P] [US7] Add failing integration test to `tests/integration/magicPhase.test.tsx` (new `describe` block): load `App` with `settings: { ...DEFAULT_SETTINGS, autoClaim: true }` via mocked `loadState`; spin → advance timers (to trigger `onSpinDone`); assert Magic Phase panel is NOT in the document; assert the CLAIM button is NOT visible; assert `lastSpinResult` is set (currency updated)
+- [X] T011 [P] [US7] Add failing integration test to `tests/integration/magicPhase.test.tsx` (new `describe` block): load `App` with `settings: { ...DEFAULT_SETTINGS, autoClaim: true }` via mocked `loadState`; spin → advance timers (to trigger `onSpinDone`); assert Magic Phase panel is NOT in the document; assert the CLAIM button is NOT visible; assert `lastSpinResult` is set (currency updated)
 
 ### Implementation for US7
 
-- [ ] T012 [P] [US7] Add `autoClaim` migration patch to `src/game/persistence.ts` in `loadState()`: after the `if (state.rowCount == null)` guard, add `if (!Object.prototype.hasOwnProperty.call(state.settings ?? {}, 'autoClaim')) { state.settings = { ...state.settings, autoClaim: false } }`
-- [ ] T013 [P] [US7] Add `autoClaim` checkbox to `src/components/SpinControls.tsx`: append a new `<label>` block after the Auto-convert label with `checked={settings.autoClaim ?? false}`, `onChange={(e) => onSettingsChange({ autoClaim: e.target.checked })}`, `disabled={spinning || isMagicPhase}`, `aria-label="Auto-claim"`, label text "Auto-claim"
-- [ ] T014 [US7] Update `handleSpinDone` in `src/App.tsx`: after `dispatch({ type: 'BEGIN_MAGIC_PHASE' })`, add `if (state.settings.autoClaim) { dispatch({ type: 'CLAIM' }) }`; add `state.settings.autoClaim` to the `useCallback` dependency array
+- [X] T012 [P] [US7] Add `autoClaim` migration patch to `src/game/persistence.ts` in `loadState()`: after the `if (state.rowCount == null)` guard, add `if (!Object.prototype.hasOwnProperty.call(state.settings ?? {}, 'autoClaim')) { state.settings = { ...state.settings, autoClaim: false } }`
+- [X] T013 [P] [US7] Add `autoClaim` checkbox to `src/components/SpinControls.tsx`: append a new `<label>` block after the Auto-convert label with `checked={settings.autoClaim ?? false}`, `onChange={(e) => onSettingsChange({ autoClaim: e.target.checked })}`, `disabled={spinning || isMagicPhase}`, `aria-label="Auto-claim"`, label text "Auto-claim"
+- [X] T014 [US7] Update `handleSpinDone` in `src/App.tsx`: after `dispatch({ type: 'BEGIN_MAGIC_PHASE' })`, add `if (state.settings.autoClaim) { dispatch({ type: 'CLAIM' }) }`; add `state.settings.autoClaim` to the `useCallback` dependency array
 
 **Checkpoint**: `npm run test:unit` and `npm run test:integration` — T010 and T011 now pass. Auto-claim works end to end.
 
@@ -145,7 +145,7 @@
 
 > **Write these tests first — confirm they FAIL before implementing T016–T018**
 
-- [ ] T015 [US2] Add failing unit tests to `tests/unit/HelpModal.test.tsx` for the new `magic` topic:
+- [X] T015 [US2] Add failing unit tests to `tests/unit/HelpModal.test.tsx` for the new `magic` topic:
   - `topic="magic"` renders heading "The Magic Phase"
   - `topic="magic"` body contains "elemental" (or "Air, Water, Earth, Fire")
   - `topic="magic"` body contains list items for Respin, Swap, Block, and Boost Value actions
@@ -153,9 +153,9 @@
 
 ### Implementation for US2
 
-- [ ] T016 [P] [US2] Add `magic` entry to the `CONTENT` record in `src/components/HelpModal.tsx` with heading "The Magic Phase" and body explaining elemental currency earning and the four optional actions (Respin/Air, Swap/Water, Block/Earth, Boost Value/Fire)
-- [ ] T017 [P] [US2] Add `onHelp?: () => void` prop to `MagicPhasePanel` interface and component in `src/components/MagicPhasePanel.tsx`; wrap the existing `<h3>` in a `flex items-center justify-between` `<div>`; render `<button type="button" aria-label="Help: Magic Phase" onClick={onHelp} className="text-gray-400 hover:text-gray-200 text-sm px-1">❓</button>` when `onHelp` is defined
-- [ ] T018 [US2] Pass `onHelp={() => setHelpTopic('magic')}` to `<MagicPhasePanel>` in `src/App.tsx`
+- [X] T016 [P] [US2] Add `magic` entry to the `CONTENT` record in `src/components/HelpModal.tsx` with heading "The Magic Phase" and body explaining elemental currency earning and the four optional actions (Respin/Air, Swap/Water, Block/Earth, Boost Value/Fire)
+- [X] T017 [P] [US2] Add `onHelp?: () => void` prop to `MagicPhasePanel` interface and component in `src/components/MagicPhasePanel.tsx`; wrap the existing `<h3>` in a `flex items-center justify-between` `<div>`; render `<button type="button" aria-label="Help: Magic Phase" onClick={onHelp} className="text-gray-400 hover:text-gray-200 text-sm px-1">❓</button>` when `onHelp` is defined
+- [X] T018 [US2] Pass `onHelp={() => setHelpTopic('magic')}` to `<MagicPhasePanel>` in `src/App.tsx`
 
 **Checkpoint**: `npm run test:unit` — T015 tests now pass. Magic Phase `❓` opens the new help panel.
 
@@ -171,11 +171,11 @@
 
 > **Write this test first — confirm it FAILS before implementing T020**
 
-- [ ] T019 [US3] Add failing unit test to `tests/unit/HelpModal.test.tsx`: `topic="market"` body contains text mentioning the Reel tab and current icons (e.g. matches `/reel tab/i` and `/current icons/i` or equivalent)
+- [X] T019 [US3] Add failing unit test to `tests/unit/HelpModal.test.tsx`: `topic="market"` body contains text mentioning the Reel tab and current icons (e.g. matches `/reel tab/i` and `/current icons/i` or equivalent)
 
 ### Implementation for US3
 
-- [ ] T020 [US3] Append a new `<p>` to the `market` topic body in `src/components/HelpModal.tsx`: "Visit the <strong>Reel</strong> tab to see all the icons currently in your slot machine."
+- [X] T020 [US3] Append a new `<p>` to the `market` topic body in `src/components/HelpModal.tsx`: "Visit the <strong>Reel</strong> tab to see all the icons currently in your slot machine."
 
 **Checkpoint**: `npm run test:unit` — T019 test now passes. Reels Store help updated.
 
@@ -191,11 +191,11 @@
 
 > **Write these tests first — confirm they FAIL before implementing T022**
 
-- [ ] T021 [US4] Add failing unit tests to `tests/unit/HelpModal.test.tsx`: `topic="game"` body contains "non-idle"; `topic="game"` body contains "Feats"
+- [X] T021 [US4] Add failing unit tests to `tests/unit/HelpModal.test.tsx`: `topic="game"` body contains "non-idle"; `topic="game"` body contains "Feats"
 
 ### Implementation for US4
 
-- [ ] T022 [US4] Update `game` topic body in `src/components/HelpModal.tsx`: insert a sentence (e.g. "Slot RPG is a <strong>non-idle</strong> incremental game — you need to keep spinning to earn. The <strong>Feats</strong> tab contains achievements that unlock automatically as you play.") before the existing magic phase paragraph
+- [X] T022 [US4] Update `game` topic body in `src/components/HelpModal.tsx`: insert a sentence (e.g. "Slot RPG is a <strong>non-idle</strong> incremental game — you need to keep spinning to earn. The <strong>Feats</strong> tab contains achievements that unlock automatically as you play.") before the existing magic phase paragraph
 
 **Checkpoint**: `npm run test:unit` — T021 tests now pass. Main help updated.
 
@@ -205,12 +205,12 @@
 
 **Purpose**: Final validation gates in constitution-mandated order. No gate may start if an earlier gate fails.
 
-- [ ] T023 **[GATE 1] Typecheck** — `npm run typecheck` exits 0 with zero errors
-- [ ] T024 **[GATE 2] Lint** — `npm run lint` exits 0 with zero errors (fix any ESLint complaints)
-- [ ] T025 **[GATE 3] Unit Tests** — `npm run test:unit` all pass; verify coverage ≥ 80% on changed files
-- [ ] T026 **[GATE 4] Integration Tests** — `npm run test:integration` all pass
-- [ ] T027 **[GATE 5] Build** — `npm run build` compiles cleanly with no warnings treated as errors
-- [ ] T028 **[GATE 6] Bundle Size** — measure gzipped JS bundle (`ls -lh dist/assets/*.js`); confirm ≤ 250 KB; record before/after delta for PR description
+- [X] T023 **[GATE 1] Typecheck** — `npm run typecheck` exits 0 with zero errors
+- [X] T024 **[GATE 2] Lint** — `npm run lint` exits 0 with zero errors (fix any ESLint complaints)
+- [X] T025 **[GATE 3] Unit Tests** — `npm run test:unit` all pass; verify coverage ≥ 80% on changed files
+- [X] T026 **[GATE 4] Integration Tests** — `npm run test:integration` all pass
+- [X] T027 **[GATE 5] Build** — `npm run build` compiles cleanly with no warnings treated as errors
+- [X] T028 **[GATE 6] Bundle Size** — measure gzipped JS bundle (`ls -lh dist/assets/*.js`); confirm ≤ 250 KB; record before/after delta for PR description
 
 ---
 

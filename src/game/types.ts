@@ -74,12 +74,14 @@ export interface PlayerSettings {
   autoConvert: boolean
   animate: boolean
   spinMultiplier: SpinMultiplier
+  autoClaim: boolean
 }
 
 export const DEFAULT_SETTINGS: PlayerSettings = {
   autoConvert: true,
   animate: true,
   spinMultiplier: 1,
+  autoClaim: false,
 }
 
 export interface SpinLogEntry {

@@ -33,6 +33,18 @@ export function SpinControls({ settings, spinning, isMagicPhase, onSettingsChang
         />
         Auto-convert
       </label>
+
+      <label className="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={settings.autoClaim ?? false}
+          onChange={(e) => onSettingsChange({ autoClaim: e.target.checked })}
+          disabled={spinning || isMagicPhase}
+          className="accent-indigo-500"
+          aria-label="Auto-claim"
+        />
+        Auto-claim
+      </label>
     </div>
   )
 }

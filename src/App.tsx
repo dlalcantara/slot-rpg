@@ -23,7 +23,7 @@ import type { Currencies, MagicMode, SpinResult } from './game/types'
 import type { AchievementId } from './game/achievements'
 
 type ActiveTab = 'reel' | 'spin' | 'market' | 'achievements'
-type HelpTopic = 'game' | 'reel' | 'spin' | 'market' | 'achievements'
+type HelpTopic = 'game' | 'reel' | 'spin' | 'market' | 'achievements' | 'magic'
 
 function loadOrInit() {
   return loadState() ?? makeInitialState()
@@ -71,9 +71,9 @@ export default function App() {
     if (state.phase !== 'magic' && state.lastSpinResult) {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
       setToastResult(state.lastSpinResult)
+      setDisplayedCurrencies(state.currencies)
       toastTimerRef.current = setTimeout(() => {
         setToastResult(null)
-        setDisplayedCurrencies(state.currencies)
       }, 3000)
     }
   }, [state.lastSpinResult]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -90,7 +90,10 @@ export default function App() {
     setMagicMode(null)
     setSwapFrom(null)
     dispatch({ type: 'BEGIN_MAGIC_PHASE' })
-  }, [])
+    if (state.settings.autoClaim) {
+      dispatch({ type: 'CLAIM' })
+    }
+  }, [state.settings.autoClaim])
 
   const handleClaim = useCallback(() => {
     setMagicMode(null)
@@ -251,6 +254,7 @@ export default function App() {
                   magicMode={magicMode}
                   swapFrom={swapFrom}
                   onSelectMode={setMagicMode}
+                  onHelp={() => setHelpTopic('magic')}
                 />
               </>
             ) : (

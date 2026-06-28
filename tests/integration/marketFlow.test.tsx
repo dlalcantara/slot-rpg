@@ -44,8 +44,10 @@ describe('market flow integration', () => {
     const buyAppleBtn = screen.getAllByRole('button', { name: /buy apple/i })[0]
     expect(buyAppleBtn).not.toBeDisabled()
     fireEvent.click(buyAppleBtn)
-    // After buying, gold decreases via conversion chain
-    expect(screen.queryByText('2')).not.toBeInTheDocument()
+    // After buying, gold decreases via conversion chain — no currency should still show 2
+    const currencyValuesAfterApple = document.querySelectorAll('.currency-value')
+    const textsAfterApple = Array.from(currencyValuesAfterApple).map((el) => el.textContent)
+    expect(textsAfterApple).not.toContain('2')
   })
 
   it('T010: player with exactly {gold:1, air:1, water:1, earth:1, fire:1} can buy Energy icon', () => {
@@ -58,8 +60,10 @@ describe('market flow integration', () => {
     const buyEnergyBtn = screen.getByRole('button', { name: /buy energy/i })
     expect(buyEnergyBtn).not.toBeDisabled()
     fireEvent.click(buyEnergyBtn)
-    // All five currencies should be deducted (gold, air, water, earth, fire all go to 0)
-    expect(screen.queryByText('2')).not.toBeInTheDocument()
+    // All five currencies should be deducted to 0
+    const currencyValuesAfterEnergy = document.querySelectorAll('.currency-value')
+    const textsAfterEnergy = Array.from(currencyValuesAfterEnergy).map((el) => el.textContent)
+    expect(textsAfterEnergy).not.toContain('2')
   })
 
   it('T010: player missing any one of the five cannot buy Energy icon', () => {

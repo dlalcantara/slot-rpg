@@ -12,10 +12,6 @@ export function ReelView({ reel, onPrestige, isMagicPhase = false }: Props) {
   const [prestigeSelecting, setPrestigeSelecting] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
-  const sortedIcons = [...reel.icons].sort((a, b) =>
-    a.definitionId.localeCompare(b.definitionId)
-  )
-
   const countByDefId = new Map<string, number>()
   for (const icon of reel.icons) {
     countByDefId.set(icon.definitionId, (countByDefId.get(icon.definitionId) ?? 0) + 1)
@@ -103,20 +99,22 @@ export function ReelView({ reel, onPrestige, isMagicPhase = false }: Props) {
         </h2>
       </div>
       <div className="flex flex-wrap gap-2">
-        {sortedIcons.map((icon) => {
-          const def = ICON_CATALOG[icon.definitionId]
-          return (
-            <div
-              key={icon.id}
-              className="icon-cell relative"
-            >
-              {def?.emoji ?? '?'}
-              {def && def.valuePerColumn > 1 && (
-                <span className="absolute bottom-0.5 right-0.5 text-xs text-gray-400 leading-none">×{def.valuePerColumn}</span>
-              )}
-            </div>
-          )
-        })}
+        {[...countByDefId.entries()]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([defId, count]) => {
+            const def = ICON_CATALOG[defId]
+            return (
+              <div key={defId} className="icon-cell relative">
+                {def?.emoji ?? '?'}
+                {def && def.valuePerColumn > 1 && (
+                  <span className="absolute bottom-0.5 right-0.5 text-xs text-gray-400 leading-none">×{def.valuePerColumn}</span>
+                )}
+                <span className="absolute top-0 left-0 text-xs font-bold text-white bg-gray-900/70 rounded-br px-0.5 leading-none">
+                  {count}
+                </span>
+              </div>
+            )
+          })}
       </div>
       {isMagicPhase && (
         <p className="text-yellow-400 bg-yellow-900/30 rounded p-2 text-sm">

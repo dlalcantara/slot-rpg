@@ -4,9 +4,11 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
 import { gameReducer } from '@/game/reducer'
 import { makeInitialState } from '@/game/initialState'
 import type { GameState, GameAction } from '@/game/types'
+import { DEFAULT_SETTINGS } from '@/game/types'
 import { SlotGrid } from '@/components/SlotGrid'
 import App from '@/App'
 import { loadState } from '@/game/persistence'
+import { calculatePayouts } from '@/game/spinLogic'
 
 vi.mock('@/game/persistence', () => ({
   saveState: vi.fn(),
@@ -371,5 +373,88 @@ describe('magic action selector', () => {
     const cells = screen.getAllByRole('listitem')
     fireEvent.click(cells[0])
     expect(screen.getByText(/select 2nd/i)).toBeInTheDocument()
+  })
+})
+
+// ─── T004: US6 — currency display updates immediately after claim ─────────────
+
+describe('US6: currency display updates immediately after claim (no timer dependency)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    localStorage.clear()
+    mockDrawColumn.mockReturnValue(appleColumn)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.mocked(loadState).mockReturnValue(null)
+  })
+
+  it('currency display reflects updated total within 500ms of claim', () => {
+    const initialFood = 20
+    const payoutAmount = 5
+
+    // First calculatePayouts call is during SPIN, second during CLAIM
+    vi.mocked(calculatePayouts)
+      .mockReturnValueOnce([])
+      .mockReturnValueOnce([{ family: 'apple', amount: payoutAmount, currency: 'food' }])
+
+    const initialState: GameState = {
+      ...makeInitialState(),
+      settings: { ...makeInitialState().settings, animate: false },
+      currencies: { ...makeInitialState().currencies, food: initialFood },
+    }
+    vi.mocked(loadState).mockReturnValue(initialState)
+
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
+    act(() => { vi.advanceTimersByTime(5000) })
+
+    fireEvent.click(screen.getByRole('button', { name: /claim spin result/i }))
+
+    // Advance less than 3000ms — display must update without waiting for timer
+    act(() => { vi.advanceTimersByTime(500) })
+
+    // Expected food: initialFood - 1 (spin cost) + payoutAmount = 24
+    const expectedFood = initialFood - 1 + payoutAmount
+    const currencyValues = document.querySelectorAll('.currency-value')
+    const texts = Array.from(currencyValues).map((el) => el.textContent)
+    expect(texts).toContain(String(expectedFood))
+  })
+})
+
+// ─── T011: US7 — auto-claim skips magic phase ────────────────────────────────
+
+describe('US7: auto-claim skips magic phase', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    localStorage.clear()
+    mockDrawColumn.mockReturnValue(appleColumn)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.mocked(loadState).mockReturnValue(null)
+  })
+
+  it('with autoClaim=true, magic phase panel and CLAIM button are never shown', () => {
+    const initialState: GameState = {
+      ...makeInitialState(),
+      settings: { ...DEFAULT_SETTINGS, autoClaim: true },
+      currencies: { ...makeInitialState().currencies, food: 10 },
+    }
+    vi.mocked(loadState).mockReturnValue(initialState)
+
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spin the reels' }))
+    act(() => { vi.advanceTimersByTime(5000) })
+
+    // Magic phase should have been skipped
+    expect(screen.queryByRole('button', { name: /claim spin result/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /respin column/i })).toBeNull()
   })
 })

@@ -35,6 +35,9 @@ export function loadState(): GameState | null {
       state.settings = { ...state.settings, spinMultiplier: 1 }
     }
     if (state.rowCount == null) state.rowCount = 3
+    if (!Object.prototype.hasOwnProperty.call(state.settings ?? {}, 'autoClaim')) {
+      state.settings = { ...state.settings, autoClaim: false }
+    }
     if (!Object.prototype.hasOwnProperty.call(state, 'initialSpinPayouts')) state.initialSpinPayouts = null
     state.unlockedAchievements = state.unlockedAchievements
       .filter((id) => (id as string) !== 'ancient-civilization')
