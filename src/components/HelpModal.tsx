@@ -8,7 +8,7 @@ const CONTENT: Record<Props['topic'], { heading: string; body: React.ReactNode }
     heading: 'About Slot RPG',
     body: (
       <>
-        <p>Slot RPG is a non idle incremental game where you earn resources by spinning the slot machine. </p>
+        <p>Slot RPG is a non-idle incremental game where you earn resources by spinning the slot machine. </p>
         <p>Use your earnings to buy new icons from the <strong>Reels Store</strong> and add them to your <strong>Reel</strong>, creating more powerful combinations.</p>
         <p>The <strong>Feats</strong> tab contains achievements and challenges that unlock automatically as you play.</p>
         <p className="text-xs text-gray-400 border-t border-gray-600 pt-3 mt-2"><strong>AI &amp; Attribution</strong> — Claude (an AI assistant) was used only for programming this game. The design is original and no AI-generated art assets were used.</p>
